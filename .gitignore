@@ -12,3 +12,4 @@ data/raw/ml-25m
 CLAUDE.md
 MOVIE_RECOMMENDATION_MVP_ROADMAP.md
 docs/
+*.tsbuildinfo
