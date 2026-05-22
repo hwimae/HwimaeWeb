@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { PrismaClient as DefaultPrismaClient } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -36,39 +37,45 @@ export function parseMovieRows(csv: string): ParsedMovie[] {
   });
 }
 
+export async function importMoviesFromCsv(prisma: Pick<PrismaClient, 'movie'>, csv: string) {
+  const movies = parseMovieRows(csv);
+
+  for (const movie of movies) {
+    await prisma.movie.upsert({
+      where: { movielensId: movie.movielensId },
+      create: {
+        movielensId: movie.movielensId,
+        title: movie.title,
+        releaseYear: movie.releaseYear,
+        genres: {
+          create: movie.genres.map((name) => ({
+            genre: {
+              connectOrCreate: {
+                where: { name },
+                create: { name },
+              },
+            },
+          })),
+        },
+      },
+      update: {
+        title: movie.title,
+        releaseYear: movie.releaseYear,
+      },
+    });
+  }
+
+  return movies.length;
+}
+
 async function importMovies(csvPath: string) {
-  const prisma = new PrismaClient();
+  const prisma = new DefaultPrismaClient();
 
   try {
     const csv = await readFile(csvPath, 'utf8');
-    const movies = parseMovieRows(csv);
+    const count = await importMoviesFromCsv(prisma, csv);
 
-    for (const movie of movies) {
-      await prisma.movie.upsert({
-        where: { movielensId: movie.movielensId },
-        create: {
-          movielensId: movie.movielensId,
-          title: movie.title,
-          releaseYear: movie.releaseYear,
-          genres: {
-            create: movie.genres.map((name) => ({
-              genre: {
-                connectOrCreate: {
-                  where: { name },
-                  create: { name },
-                },
-              },
-            })),
-          },
-        },
-        update: {
-          title: movie.title,
-          releaseYear: movie.releaseYear,
-        },
-      });
-    }
-
-    console.log(`Imported ${movies.length} movies from ${csvPath}`);
+    console.log(`Imported ${count} movies from ${csvPath}`);
   } finally {
     await prisma.$disconnect();
   }

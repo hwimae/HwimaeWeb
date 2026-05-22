@@ -9,7 +9,5 @@ coverage
 .DS_Store
 data/raw/ml-25m
 .claude/
-CLAUDE.md
-MOVIE_RECOMMENDATION_MVP_ROADMAP.md
 docs/
 *.tsbuildinfo

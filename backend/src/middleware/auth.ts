@@ -1,9 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import type { AuthUser } from '../auth/auth.schema';
-import type { AppConfig } from '../config';
+import type { BackendDeps } from '../dependencies';
 import { unauthorized } from '../errors';
-import { prisma } from '../prisma';
 
 declare global {
   namespace Express {
@@ -13,12 +11,7 @@ declare global {
   }
 }
 
-type JwtPayload = {
-  sub: string;
-  email: string;
-};
-
-export function requireAuth(config: AppConfig) {
+export function requireAuth(deps: Pick<BackendDeps, 'prisma' | 'tokenService'>) {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       const header = req.header('authorization');
@@ -27,8 +20,8 @@ export function requireAuth(config: AppConfig) {
         throw unauthorized('Unauthorized');
       }
 
-      const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as JwtPayload;
-      const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+      const payload = deps.tokenService.verifyAccessToken(token);
+      const user = await deps.prisma.user.findUnique({ where: { id: payload.sub } });
       if (!user) {
         throw unauthorized('Unauthorized');
       }

@@ -1,26 +1,20 @@
 import { Router } from 'express';
+import type { BackendDeps } from '../dependencies';
 import { validateParams, validateQuery } from '../middleware/validate';
+import { createMoviesController } from './movies.controller';
 import { listMoviesQuerySchema, movieIdParamsSchema, type ListMoviesQuery } from './movies.schema';
-import * as moviesService from './movies.service';
+import { createMoviesService } from './movies.service';
 
-export function createMoviesRouter(): Router {
+export function createMoviesRouter(deps: BackendDeps): Router {
   const router = Router();
+  const controller = createMoviesController(createMoviesService(deps));
 
-  router.get('/', validateQuery(listMoviesQuerySchema), async (req, res, next) => {
-    try {
-      res.json(await moviesService.listMovies(req.query as unknown as ListMoviesQuery));
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  router.get('/:id', validateParams(movieIdParamsSchema), async (req, res, next) => {
-    try {
-      res.json(await moviesService.getMovieById(req.params.id));
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.get<Record<string, string>, unknown, unknown, ListMoviesQuery>(
+    '/',
+    validateQuery(listMoviesQuerySchema),
+    controller.listMovies,
+  );
+  router.get('/:id', validateParams(movieIdParamsSchema), controller.getMovieById);
 
   return router;
 }
