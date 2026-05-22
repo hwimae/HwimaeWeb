@@ -3,10 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "pnpm --parallel --filter web --filter api dev",
-    "build": "pnpm --recursive build",
-    "lint": "pnpm --recursive lint",
-    "test": "pnpm --recursive test",
+    "dev": "corepack pnpm --parallel --filter frontend --filter backend dev",
+    "build": "corepack pnpm --recursive build",
+    "lint": "corepack pnpm --recursive --if-present lint",
+    "test": "corepack pnpm --recursive test",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,prisma}\""
   },
   "devDependencies": {
