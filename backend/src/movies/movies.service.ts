@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
+import type { BackendDeps } from '../dependencies';
 import { notFound } from '../errors';
-import { prisma } from '../prisma';
 import type { ListMoviesQuery } from './movies.schema';
 
 type MovieWithGenres = Prisma.MovieGetPayload<{
@@ -24,58 +24,45 @@ export type ListMoviesResponse = {
   limit: number;
 };
 
-export async function listMovies(query: ListMoviesQuery): Promise<ListMoviesResponse> {
-  const where: Prisma.MovieWhereInput = query.q
-    ? {
-        title: {
-          contains: query.q,
-          mode: 'insensitive',
-        },
-      }
-    : {};
+export type MoviesService = {
+  listMovies(query: ListMoviesQuery): Promise<ListMoviesResponse>;
+  getMovieById(id: string): Promise<MovieResponse>;
+};
 
-  const [items, total] = await prisma.$transaction([
-    prisma.movie.findMany({
-      where,
-      include: {
-        genres: {
-          include: {
-            genre: true,
-          },
-        },
-      },
-      orderBy: [{ ratingCount: 'desc' }, { averageRating: 'desc' }, { title: 'asc' }],
-      skip: (query.page - 1) * query.limit,
-      take: query.limit,
-    }),
-    prisma.movie.count({ where }),
-  ]);
-
+export function createMoviesService(deps: Pick<BackendDeps, 'prisma'>): MoviesService {
   return {
-    items: items.map(toMovieResponse),
-    total,
-    page: query.page,
-    limit: query.limit,
-  };
-}
+    async listMovies(query) {
+      const where: Prisma.MovieWhereInput = query.q
+        ? { title: { contains: query.q, mode: 'insensitive' } }
+        : {};
 
-export async function getMovieById(id: string): Promise<MovieResponse> {
-  const movie = await prisma.movie.findUnique({
-    where: { id },
-    include: {
-      genres: {
-        include: {
-          genre: true,
-        },
-      },
+      const [items, total] = await deps.prisma.$transaction([
+        deps.prisma.movie.findMany({
+          where,
+          include: { genres: { include: { genre: true } } },
+          orderBy: [{ ratingCount: 'desc' }, { averageRating: 'desc' }, { title: 'asc' }],
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+        }),
+        deps.prisma.movie.count({ where }),
+      ]);
+
+      return { items: items.map(toMovieResponse), total, page: query.page, limit: query.limit };
     },
-  });
 
-  if (!movie) {
-    throw notFound('Movie not found');
-  }
+    async getMovieById(id) {
+      const movie = await deps.prisma.movie.findUnique({
+        where: { id },
+        include: { genres: { include: { genre: true } } },
+      });
 
-  return toMovieResponse(movie);
+      if (!movie) {
+        throw notFound('Movie not found');
+      }
+
+      return toMovieResponse(movie);
+    },
+  };
 }
 
 function toMovieResponse(movie: MovieWithGenres): MovieResponse {

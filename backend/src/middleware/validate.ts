@@ -1,22 +1,28 @@
-import type { NextFunction, Request, Response } from 'express';
-import type { ZodTypeAny } from 'zod';
+import type { RequestHandler } from 'express';
+import type { z, ZodTypeAny } from 'zod';
 
-export function validateBody(schema: ZodTypeAny) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+type RouteParams = Record<string, string>;
+
+export function validateBody<TSchema extends ZodTypeAny>(
+  schema: TSchema,
+): RequestHandler<RouteParams, unknown, z.infer<TSchema>> {
+  return (req, _res, next) => {
     req.body = schema.parse(req.body);
     next();
   };
 }
 
-export function validateQuery(schema: ZodTypeAny) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+export function validateQuery<TSchema extends ZodTypeAny>(
+  schema: TSchema,
+): RequestHandler<RouteParams, unknown, unknown, z.infer<TSchema>> {
+  return (req, _res, next) => {
     req.query = schema.parse(req.query);
     next();
   };
 }
 
-export function validateParams(schema: ZodTypeAny) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+export function validateParams<TSchema extends ZodTypeAny>(schema: TSchema): RequestHandler<z.infer<TSchema>> {
+  return (req, _res, next) => {
     req.params = schema.parse(req.params);
     next();
   };

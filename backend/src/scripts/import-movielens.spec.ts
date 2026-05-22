@@ -1,4 +1,4 @@
-import { parseMovieRows } from './import-movielens';
+import { importMoviesFromCsv, parseMovieRows } from './import-movielens';
 
 describe('parseMovieRows', () => {
   it('parses MovieLens movie rows into movies with years and genres', () => {
@@ -35,5 +35,35 @@ describe('parseMovieRows', () => {
         genres: [],
       },
     ]);
+  });
+
+  it('imports parsed movies through the provided Prisma client', async () => {
+    const prisma = {
+      movie: {
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+    } as any;
+    const csv = ['movieId,title,genres', '1,Toy Story (1995),Adventure|Animation'].join('\n');
+
+    await importMoviesFromCsv(prisma, csv);
+
+    expect(prisma.movie.upsert).toHaveBeenCalledWith({
+      where: { movielensId: 1 },
+      create: {
+        movielensId: 1,
+        title: 'Toy Story',
+        releaseYear: 1995,
+        genres: {
+          create: [
+            { genre: { connectOrCreate: { where: { name: 'Adventure' }, create: { name: 'Adventure' } } } },
+            { genre: { connectOrCreate: { where: { name: 'Animation' }, create: { name: 'Animation' } } } },
+          ],
+        },
+      },
+      update: {
+        title: 'Toy Story',
+        releaseYear: 1995,
+      },
+    });
   });
 });

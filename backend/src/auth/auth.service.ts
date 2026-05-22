@@ -1,56 +1,61 @@
 import { Prisma } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import type { AppConfig } from '../config';
+import type { BackendDeps } from '../dependencies';
 import { conflict, unauthorized } from '../errors';
-import { prisma } from '../prisma';
 import type { AuthResponse, LoginInput, RegisterInput } from './auth.schema';
 
+export type AuthService = {
+  register(input: RegisterInput): Promise<AuthResponse>;
+  login(input: LoginInput): Promise<AuthResponse>;
+};
+
 function createAuthResponse(
-  config: AppConfig,
+  deps: Pick<BackendDeps, 'tokenService'>,
   user: { id: string; email: string; name: string },
 ): AuthResponse {
   return {
     user: { id: user.id, email: user.email, name: user.name },
-    accessToken: jwt.sign({ sub: user.id, email: user.email }, config.jwtSecret, {
-      algorithm: 'HS256',
-      expiresIn: '7d',
-    }),
+    accessToken: deps.tokenService.signAccessToken(user),
   };
 }
 
-export async function register(config: AppConfig, input: RegisterInput): Promise<AuthResponse> {
-  const existing = await prisma.user.findUnique({ where: { email: input.email } });
-  if (existing) {
-    throw conflict('Email already exists');
-  }
+export function createAuthService(
+  deps: Pick<BackendDeps, 'prisma' | 'passwordHasher' | 'tokenService'>,
+): AuthService {
+  return {
+    async register(input) {
+      const existing = await deps.prisma.user.findUnique({ where: { email: input.email } });
+      if (existing) {
+        throw conflict('Email already exists');
+      }
 
-  const passwordHash = await bcrypt.hash(input.password, 10);
+      const passwordHash = await deps.passwordHasher.hash(input.password);
 
-  try {
-    const user = await prisma.user.create({
-      data: { email: input.email, passwordHash, name: input.name },
-    });
+      try {
+        const user = await deps.prisma.user.create({
+          data: { email: input.email, passwordHash, name: input.name },
+        });
 
-    return createAuthResponse(config, user);
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      throw conflict('Email already exists');
-    }
-    throw error;
-  }
-}
+        return createAuthResponse(deps, user);
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          throw conflict('Email already exists');
+        }
+        throw error;
+      }
+    },
 
-export async function login(config: AppConfig, input: LoginInput): Promise<AuthResponse> {
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
-  if (!user) {
-    throw unauthorized('Invalid credentials');
-  }
+    async login(input) {
+      const user = await deps.prisma.user.findUnique({ where: { email: input.email } });
+      if (!user) {
+        throw unauthorized('Invalid credentials');
+      }
 
-  const valid = await bcrypt.compare(input.password, user.passwordHash);
-  if (!valid) {
-    throw unauthorized('Invalid credentials');
-  }
+      const valid = await deps.passwordHasher.compare(input.password, user.passwordHash);
+      if (!valid) {
+        throw unauthorized('Invalid credentials');
+      }
 
-  return createAuthResponse(config, user);
+      return createAuthResponse(deps, user);
+    },
+  };
 }
