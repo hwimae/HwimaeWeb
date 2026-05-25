@@ -1,10 +1,10 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { unauthorized } from '../errors';
-import type { RatingsService } from './ratings.service';
+import type { ReviewsService } from './reviews.service';
 
-export type RatingsController = {
-  rateMovie: RequestHandler;
-  listMyRatings: RequestHandler;
+export type ReviewsController = {
+  reviewStory: RequestHandler;
+  listMyReviews: RequestHandler;
 };
 
 function getUserId(req: Request, next: NextFunction): string | undefined {
@@ -16,25 +16,25 @@ function getUserId(req: Request, next: NextFunction): string | undefined {
   return req.user.id;
 }
 
-export function createRatingsController(ratingsService: RatingsService): RatingsController {
+export function createReviewsController(reviewsService: ReviewsService): ReviewsController {
   return {
-    async rateMovie(req: Request, res: Response, next: NextFunction) {
+    async reviewStory(req: Request, res: Response, next: NextFunction) {
       const userId = getUserId(req, next);
       if (!userId) return;
 
       try {
-        res.json(await ratingsService.rateMovie(userId, req.body));
+        res.json(await reviewsService.reviewStory(userId, req.body));
       } catch (error) {
         next(error);
       }
     },
 
-    async listMyRatings(req: Request, res: Response, next: NextFunction) {
+    async listMyReviews(req: Request, res: Response, next: NextFunction) {
       const userId = getUserId(req, next);
       if (!userId) return;
 
       try {
-        res.json(await ratingsService.listMyRatings(userId));
+        res.json(await reviewsService.listMyReviews(userId));
       } catch (error) {
         next(error);
       }

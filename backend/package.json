@@ -10,7 +10,8 @@
     "test": "jest --passWithNoTests",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "import:movies": "tsx src/scripts/import-movielens.ts"
+    "import:stories": "tsx src/scripts/import-books.ts",
+    "import:comments": "tsx src/scripts/import-comments.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

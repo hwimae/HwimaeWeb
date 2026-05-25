@@ -11,3 +11,8 @@ data/raw/ml-25m
 .claude/
 docs/
 *.tsbuildinfo
+
+# Local raw dataset - do not commit
+data/raw/books/*
+!data/raw/books/README.md
+!data/raw/books/.gitkeep

@@ -5,8 +5,8 @@ import { createAuthRouter } from './auth/auth.router';
 import type { AppConfig } from './config';
 import type { BackendDeps } from './dependencies';
 import { createErrorHandler, notFound } from './errors';
-import { createMoviesRouter } from './movies/movies.router';
-import { createRatingsRouter } from './ratings/ratings.router';
+import { createReviewsRouter } from './reviews/reviews.router';
+import { createStoriesRouter } from './stories/stories.router';
 
 export function createApp(config: AppConfig, deps: BackendDeps): Express {
   const app = express();
@@ -16,8 +16,8 @@ export function createApp(config: AppConfig, deps: BackendDeps): Express {
   app.use(rateLimit({ windowMs: 60_000, limit: 120 }));
 
   app.use('/auth', createAuthRouter(deps));
-  app.use('/movies', createMoviesRouter(deps));
-  app.use('/ratings', createRatingsRouter(deps));
+  app.use('/stories', createStoriesRouter(deps));
+  app.use('/reviews', createReviewsRouter(deps));
 
   app.use((_req, _res, next) => {
     next(notFound('Not found'));

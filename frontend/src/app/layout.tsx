@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Movie Recommendation Platform",
-  description: "Movie browsing shell for the movie recommendation platform",
+  title: "Story Recommendation Platform",
+  description: "Story browsing shell for the story recommendation platform",
 };
 
 export default function RootLayout({
