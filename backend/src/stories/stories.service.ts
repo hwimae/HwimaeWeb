@@ -49,7 +49,7 @@ export function createStoriesService(deps: Pick<BackendDeps, 'prisma'>): Stories
         deps.prisma.story.findMany({
           where,
           include: { category: true, content: { select: { id: true } } },
-          orderBy: [{ reviewCount: 'desc' }, { averageRating: 'desc' }, { title: 'asc' }],
+          orderBy: [{ externalReviewCount: 'desc' }, { externalAverageRating: 'desc' }, { title: 'asc' }],
           skip: (query.page - 1) * query.limit,
           take: query.limit,
         }),

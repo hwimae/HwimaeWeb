@@ -57,7 +57,10 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
         <strong>Thể loại:</strong> {story.category}
       </p>
       <p>
-        <strong>Điểm trung bình:</strong> {story.averageRating.toFixed(1)} / 5 ({story.reviewCount} review)
+        <strong>Đánh giá từ dữ liệu gốc:</strong> {story.externalAverageRating.toFixed(1)} / 5 ({story.externalReviewCount} review)
+      </p>
+      <p>
+        <strong>Đánh giá từ người dùng app:</strong> {story.userAverageRating.toFixed(1)} / 5 ({story.userReviewCount} review)
       </p>
       <p>
         <strong>Số trang:</strong> {story.pages ?? "Chưa rõ"}

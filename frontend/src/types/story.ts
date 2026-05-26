@@ -8,6 +8,10 @@ export type Story = {
   quantity: number | null;
   averageRating: number;
   reviewCount: number;
+  externalAverageRating: number;
+  externalReviewCount: number;
+  userAverageRating: number;
+  userReviewCount: number;
   pages: number | null;
   manufacturer: string | null;
   coverUrl: string | null;
@@ -59,6 +63,10 @@ export function parseStory(input: unknown): Story {
     quantity,
     averageRating,
     reviewCount,
+    externalAverageRating,
+    externalReviewCount,
+    userAverageRating,
+    userReviewCount,
     pages,
     manufacturer,
     coverUrl,
@@ -77,6 +85,10 @@ export function parseStory(input: unknown): Story {
   if (typeof quantity !== "number" && quantity !== null) throw new Error("Invalid story.quantity: expected number | null");
   if (typeof averageRating !== "number") throw new Error("Invalid story.averageRating: expected number");
   if (typeof reviewCount !== "number") throw new Error("Invalid story.reviewCount: expected number");
+  if (typeof externalAverageRating !== "number") throw new Error("Invalid story.externalAverageRating: expected number");
+  if (typeof externalReviewCount !== "number") throw new Error("Invalid story.externalReviewCount: expected number");
+  if (typeof userAverageRating !== "number") throw new Error("Invalid story.userAverageRating: expected number");
+  if (typeof userReviewCount !== "number") throw new Error("Invalid story.userReviewCount: expected number");
   if (typeof pages !== "number" && pages !== null) throw new Error("Invalid story.pages: expected number | null");
   if (typeof categoryId !== "string") throw new Error("Invalid story.categoryId: expected string");
   if (typeof category !== "string") throw new Error("Invalid story.category: expected string");
@@ -94,6 +106,10 @@ export function parseStory(input: unknown): Story {
     quantity,
     averageRating,
     reviewCount,
+    externalAverageRating,
+    externalReviewCount,
+    userAverageRating,
+    userReviewCount,
     pages,
     manufacturer: parseNullableString(manufacturer, "manufacturer"),
     coverUrl: parseNullableString(coverUrl, "coverUrl"),

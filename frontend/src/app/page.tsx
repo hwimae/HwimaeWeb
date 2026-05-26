@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { StoryListControls } from "@/components/story-list-controls";
 import { apiGet } from "@/lib/api";
+import {
+  parseRecommendationsResponse,
+  type RecommendationsResponse,
+} from "@/types/recommendation";
 import { parsePaginatedStories, type PaginatedStories } from "@/types/story";
 
 type HomePageProps = {
@@ -19,6 +23,11 @@ type StoriesState = {
   hasError: boolean;
 };
 
+type RecommendationsState = {
+  recommendations: RecommendationsResponse;
+  hasError: boolean;
+};
+
 export const dynamic = "force-dynamic";
 
 const EMPTY_STORIES: PaginatedStories = {
@@ -26,6 +35,10 @@ const EMPTY_STORIES: PaginatedStories = {
   total: 0,
   page: 1,
   limit: 20,
+};
+
+const EMPTY_RECOMMENDATIONS: RecommendationsResponse = {
+  items: [],
 };
 
 function getSingleParam(value: string | string[] | undefined): string | undefined {
@@ -82,9 +95,26 @@ async function getStories(params: StoryListParams): Promise<StoriesState> {
   }
 }
 
+async function getPopularRecommendations(): Promise<RecommendationsState> {
+  try {
+    const recommendations = await apiGet<RecommendationsResponse>(
+      "/recommendations/popular?limit=6",
+      undefined,
+      parseRecommendationsResponse,
+    );
+    return { recommendations, hasError: false };
+  } catch (error) {
+    console.error("[HomePage] Failed to fetch recommendations", error);
+    return { recommendations: EMPTY_RECOMMENDATIONS, hasError: true };
+  }
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = parseStoryListParams(await searchParams);
-  const { stories, hasError } = await getStories(params);
+  const [{ stories, hasError }, { recommendations, hasError: recommendationsHasError }] = await Promise.all([
+    getStories(params),
+    getPopularRecommendations(),
+  ]);
   const totalPages = Math.max(1, Math.ceil(stories.total / stories.limit));
 
   return (
@@ -100,6 +130,34 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </nav>
       </header>
 
+      <section className="recommendation-section">
+        <h2>Gợi ý truyện phổ biến</h2>
+        <p className="result-summary">
+          Các truyện được xếp hạng theo rating và số lượng review từ dữ liệu gốc.
+        </p>
+        {recommendationsHasError ? (
+          <p className="warning-text">Không thể tải gợi ý truyện lúc này.</p>
+        ) : null}
+        {recommendations.items.length === 0 ? (
+          <p>Chưa có đủ tín hiệu review để tạo gợi ý.</p>
+        ) : (
+          <div className="story-grid">
+            {recommendations.items.map((item) => (
+              <Link key={item.storyId} href={`/stories/${item.storyId}`} className="story-card recommendation-card">
+                <h3 className="story-title">{item.title}</h3>
+                <p className="story-meta">Tác giả: {item.authors}</p>
+                <p className="story-meta">Thể loại: {item.category}</p>
+                <p className="story-meta">
+                  Dữ liệu gốc: {item.averageRating.toFixed(1)} ({item.reviewCount} review)
+                </p>
+                <p className="recommendation-score">Score: {item.score.toFixed(2)}</p>
+                <p className="recommendation-reason">{item.reason}</p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
       <section>
         <h2>Truyện mới nhập</h2>
         <StoryListControls query={params.query} hasContent={params.hasContent} />
@@ -107,7 +165,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           Tìm thấy {stories.total} truyện{params.hasContent ? " có nội dung đọc" : ""}.
         </p>
         {hasError ? (
-          <p style={{ fontSize: "0.875rem", color: "#b45309", margin: "0.25rem 0 0.75rem" }}>
+          <p className="warning-text">
             Không thể tải danh sách truyện lúc này. Đang hiển thị danh sách rỗng tạm thời.
           </p>
         ) : null}
@@ -121,7 +179,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   <h3 className="story-title">{story.title}</h3>
                   <p className="story-meta">Tác giả: {story.authors}</p>
                   <p className="story-meta">
-                    Điểm: {story.averageRating.toFixed(1)} ({story.reviewCount} review)
+                    Dữ liệu gốc: {story.externalAverageRating.toFixed(1)} ({story.externalReviewCount} review)
+                  </p>
+                  <p className="story-meta">
+                    Người dùng app: {story.userAverageRating.toFixed(1)} ({story.userReviewCount} review)
                   </p>
                   <p className="story-meta">{story.category}</p>
                   {story.currentPrice !== null ? <p className="story-meta">Giá: {story.currentPrice}</p> : null}

@@ -140,6 +140,35 @@ main {
   font-size: 0.875rem;
 }
 
+.warning-text {
+  margin: 0.25rem 0 0.75rem;
+  color: #b45309;
+  font-size: 0.875rem;
+}
+
+.recommendation-section {
+  margin-bottom: 2rem;
+}
+
+.recommendation-card {
+  border-color: #334155;
+  background: #0b1220;
+}
+
+.recommendation-score {
+  margin: 0.75rem 0 0;
+  color: #bae6fd;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.recommendation-reason {
+  margin: 0.5rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .story-badge {
   display: inline-flex;
   margin-top: 0.75rem;

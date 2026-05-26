@@ -40,7 +40,7 @@ export function parseReviewRows(csv: string): ParsedReview[] {
   }));
 }
 
-export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 'review'>, csv: string) {
+export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 'externalReview'>, csv: string) {
   const reviews = parseReviewRows(csv);
   const affectedStoryIds = new Set<string>();
   let importedCount = 0;
@@ -49,7 +49,7 @@ export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 
     const story = await prisma.story.findUnique({ where: { productId: review.productId }, select: { id: true } });
     if (!story) continue;
 
-    await prisma.review.upsert({
+    await prisma.externalReview.upsert({
       where: { externalCommentId: review.externalCommentId },
       create: {
         storyId: story.id,
@@ -59,7 +59,6 @@ export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 
         title: review.title,
         content: review.content,
         thankCount: review.thankCount,
-        source: 'imported',
       },
       update: {
         storyId: story.id,
@@ -68,7 +67,6 @@ export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 
         title: review.title,
         content: review.content,
         thankCount: review.thankCount,
-        source: 'imported',
       },
     });
     affectedStoryIds.add(story.id);
@@ -76,7 +74,7 @@ export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 
   }
 
   for (const storyId of affectedStoryIds) {
-    const aggregate = await prisma.review.aggregate({
+    const aggregate = await prisma.externalReview.aggregate({
       where: { storyId },
       _avg: { rating: true },
       _count: { _all: true },
@@ -84,7 +82,12 @@ export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 
 
     await prisma.story.update({
       where: { id: storyId },
-      data: { averageRating: aggregate._avg.rating ?? 0, reviewCount: aggregate._count._all },
+      data: {
+        averageRating: aggregate._avg.rating ?? 0,
+        reviewCount: aggregate._count._all,
+        externalAverageRating: aggregate._avg.rating ?? 0,
+        externalReviewCount: aggregate._count._all,
+      },
     });
   }
 

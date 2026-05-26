@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { PrismaClient as DefaultPrismaClient } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
-import { readdir, readFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 type StoryCsvRow = {
@@ -40,6 +40,7 @@ export type ParsedStory = {
 const DEFAULT_BOOKS_DIR = resolve(process.cwd(), '../data/raw/books');
 const DEFAULT_STORIES_CSV = resolve(DEFAULT_BOOKS_DIR, 'prepared_data_book.csv');
 const DEFAULT_OUTPUT_DIR = resolve(DEFAULT_BOOKS_DIR, 'output');
+const DEFAULT_MATCH_REPORT_PATH = resolve(process.cwd(), '../data/processed/content-path-match-report.json');
 
 export function parseStoryRows(csv: string, contentPathsByProductId: Map<string, string>): ParsedStory[] {
   const rows = parse(csv, { columns: true, skip_empty_lines: true, trim: true }) as StoryCsvRow[];
@@ -72,18 +73,78 @@ export function parseStoryRows(csv: string, contentPathsByProductId: Map<string,
   return stories;
 }
 
+type ContentPathMatchReport = {
+  matched: Array<{ productId: number; title: string; authors: string; fileName: string }>;
+  missing: Array<{ productId: number; title: string; authors: string }>;
+  ambiguous: Array<{ productId: number; title: string; authors: string; candidates: string[] }>;
+};
+
 export async function buildContentPathsByProductId(outputDir: string, stories: ParsedStory[]) {
+  const report = await buildContentPathMatchReport(outputDir, stories);
+  return new Map(report.matched.map((match) => [String(match.productId), join(outputDir, match.fileName)]));
+}
+
+export async function buildContentPathMatchReport(outputDir: string, stories: ParsedStory[]): Promise<ContentPathMatchReport> {
   const files = await readdir(outputDir);
-  const contentPathsByProductId = new Map<string, string>();
+  const normalizedFiles = files
+    .filter((file) => file.toLowerCase().endsWith('.txt'))
+    .map((file) => ({ file, normalized: normalizeForMatch(file.replace(/\.txt$/i, '')) }));
+  const report: ContentPathMatchReport = { matched: [], missing: [], ambiguous: [] };
 
   for (const story of stories) {
-    const expectedFileName = `${story.title} - ${story.authors}.txt`;
-    if (files.includes(expectedFileName)) {
-      contentPathsByProductId.set(String(story.productId), join(outputDir, expectedFileName));
+    const matches = findContentFileMatches(story, normalizedFiles);
+    if (matches.length === 1) {
+      report.matched.push({ productId: story.productId, title: story.title, authors: story.authors, fileName: matches[0].file });
+    } else if (matches.length > 1) {
+      report.ambiguous.push({
+        productId: story.productId,
+        title: story.title,
+        authors: story.authors,
+        candidates: matches.map(({ file }) => file).sort(),
+      });
+    } else {
+      report.missing.push({ productId: story.productId, title: story.title, authors: story.authors });
     }
   }
 
-  return contentPathsByProductId;
+  return report;
+}
+
+function findContentFileMatches(story: ParsedStory, files: Array<{ file: string; normalized: string }>) {
+  const titleTokens = tokenizeForMatch(removeEditionNoise(story.title));
+  const authorTokens = tokenizeForMatch(story.authors).filter((token) => token !== 'unknown');
+  if (titleTokens.join('').length < 4) return [];
+
+  const scoredMatches = files
+    .map((file) => ({ ...file, score: scoreContentFileMatch(titleTokens, authorTokens, tokenizeForMatch(file.normalized)) }))
+    .filter(({ score }) => score >= 0.8)
+    .sort((a, b) => b.score - a.score || a.file.localeCompare(b.file));
+
+  if (scoredMatches.length <= 1) return scoredMatches;
+  return scoredMatches.filter(({ score }) => score === scoredMatches[0].score);
+}
+
+function scoreContentFileMatch(titleTokens: string[], authorTokens: string[], fileTokens: string[]): number {
+  const fileTokenSet = new Set(fileTokens);
+  const titleScore = countTokenMatches(titleTokens, fileTokenSet) / titleTokens.length;
+  const authorScore = authorTokens.length > 0 ? countTokenMatches(authorTokens, fileTokenSet) / authorTokens.length : 0;
+  return authorTokens.length > 0 ? titleScore * 0.8 + authorScore * 0.2 : titleScore;
+}
+
+function countTokenMatches(tokens: string[], fileTokenSet: Set<string>): number {
+  return tokens.filter((token) => fileTokenSet.has(token)).length;
+}
+
+function tokenizeForMatch(value: string): string[] {
+  return normalizeForMatch(value)
+    .split(' ')
+    .filter((token) => token.length > 1);
+}
+
+function removeEditionNoise(value: string): string {
+  return value
+    .replace(/\([^)]*(tái bản|tai ban|bìa cứng|bia cung|ấn bản|an ban)[^)]*\)/gi, ' ')
+    .replace(/\b(tái bản|tai ban|bìa cứng|bia cung|ấn bản|an ban|kỷ niệm|ky niem)\b.*$/gi, ' ');
 }
 
 type ImportStoriesPrisma = Pick<PrismaClient, 'story' | 'storyContent' | '$transaction'>;
@@ -140,6 +201,8 @@ function toPrismaStoryUpdateData(story: ParsedStory) {
     quantity: story.quantity,
     averageRating: story.averageRating,
     reviewCount: story.reviewCount,
+    externalAverageRating: story.averageRating,
+    externalReviewCount: story.reviewCount,
     pages: story.pages,
     manufacturer: story.manufacturer,
     coverUrl: story.coverUrl,
@@ -171,25 +234,47 @@ function normalizeString(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-async function importStories(csvPath: string, outputDir: string) {
+function normalizeForMatch(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+async function importStories(csvPath: string, outputDir: string, reportPath: string) {
   const prisma = new DefaultPrismaClient();
 
   try {
     const csv = await readFile(csvPath, 'utf8');
     const stories = parseStoryRows(csv, new Map());
-    const contentPathsByProductId = await buildContentPathsByProductId(outputDir, stories);
+    const report = await buildContentPathMatchReport(outputDir, stories);
+    await writeContentPathMatchReport(reportPath, report);
+    const contentPathsByProductId = new Map(report.matched.map((match) => [String(match.productId), join(outputDir, match.fileName)]));
     const count = await importStoriesFromCsv(prisma, csv, contentPathsByProductId);
 
     console.log(`Imported ${count} stories from ${csvPath}`);
+    console.log(`Content path matches: ${report.matched.length} matched, ${report.ambiguous.length} ambiguous, ${report.missing.length} missing`);
+    console.log(`Content path match report: ${reportPath}`);
   } finally {
     await prisma.$disconnect();
   }
 }
 
+async function writeContentPathMatchReport(reportPath: string, report: ContentPathMatchReport) {
+  await mkdir(resolve(reportPath, '..'), { recursive: true });
+  await writeFile(reportPath, JSON.stringify(report, null, 2), 'utf8');
+}
+
 async function main() {
   const csvPath = resolve(process.argv[2] ?? DEFAULT_STORIES_CSV);
   const outputDir = resolve(process.argv[3] ?? DEFAULT_OUTPUT_DIR);
-  await importStories(csvPath, outputDir);
+  const reportPath = resolve(process.argv[4] ?? DEFAULT_MATCH_REPORT_PATH);
+  await importStories(csvPath, outputDir, reportPath);
 }
 
 if (require.main === module) {
