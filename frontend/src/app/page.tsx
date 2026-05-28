@@ -125,6 +125,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <p>Khám phá truyện chữ và viết review để nhận gợi ý phù hợp.</p>
         </div>
         <nav className="auth-links">
+          <Link href="/recommendations">AI tư vấn</Link>
           <Link href="/login">Đăng nhập</Link>
           <Link href="/register">Đăng ký</Link>
         </nav>

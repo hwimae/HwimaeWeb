@@ -198,3 +198,60 @@ main {
 .pagination span {
   color: #64748b;
 }
+
+.advisor-panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.advisor-form {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #0b1220;
+}
+
+.advisor-textarea {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #020617;
+  color: #f8fafc;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.primary-button {
+  width: fit-content;
+  border: 1px solid #38bdf8;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #0284c7;
+  color: #f8fafc;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primary-button:disabled {
+  border-color: #334155;
+  background: #334155;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.advisor-result {
+  display: grid;
+  gap: 1rem;
+}
+
+.advisor-answer {
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #111827;
+  color: #e2e8f0;
+  line-height: 1.7;
+}

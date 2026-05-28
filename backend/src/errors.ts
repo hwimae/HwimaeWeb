@@ -11,9 +11,11 @@ export class HttpError extends Error {
   }
 }
 
+export const badRequest = (message: string): HttpError => new HttpError(400, message);
+export const unauthorized = (message: string): HttpError => new HttpError(401, message);
 export const notFound = (message: string): HttpError => new HttpError(404, message);
 export const conflict = (message: string): HttpError => new HttpError(409, message);
-export const unauthorized = (message: string): HttpError => new HttpError(401, message);
+export const badGateway = (message: string): HttpError => new HttpError(502, message);
 
 export function createErrorHandler(logger: Logger): ErrorRequestHandler {
   return (error, _req, res, _next) => {

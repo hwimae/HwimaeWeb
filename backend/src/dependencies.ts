@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { AppConfig } from './config';
+import { createAiClient, type AiClient } from './recommendations/ai-client';
 import { prisma } from './prisma';
 
 export type AccessTokenPayload = {
@@ -27,6 +28,7 @@ export type BackendDeps = {
   prisma: PrismaClient;
   passwordHasher: PasswordHasher;
   tokenService: TokenService;
+  aiClient: AiClient;
   logger: Logger;
 };
 
@@ -46,6 +48,7 @@ export function createBackendDeps(config: AppConfig): BackendDeps {
       verifyAccessToken: (token) =>
         jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as AccessTokenPayload,
     },
+    aiClient: createAiClient(config.aiServiceUrl),
     logger: console,
   };
 }

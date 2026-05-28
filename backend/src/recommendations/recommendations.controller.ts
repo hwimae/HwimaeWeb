@@ -1,12 +1,13 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { BackendDeps } from '../dependencies';
 import { unauthorized } from '../errors';
-import type { RecommendationsQuery } from './recommendations.schema';
+import type { AskRecommendationBody, RecommendationsQuery } from './recommendations.schema';
 import type { RecommendationsService } from './recommendations.service';
 
 export type RecommendationsController = {
   listPopularRecommendations: RequestHandler<Record<string, string>, unknown, unknown, RecommendationsQuery>;
   listMyRecommendations: RequestHandler<Record<string, string>, unknown, unknown, RecommendationsQuery>;
+  askStoryAdvisor: RequestHandler<Record<string, string>, unknown, AskRecommendationBody>;
 };
 
 export function createRecommendationsController(
@@ -38,6 +39,14 @@ export function createRecommendationsController(
           : await recommendationsService.listPopularRecommendations(req.query);
 
         res.json(recommendations);
+      } catch (error) {
+        next(error);
+      }
+    },
+
+    async askStoryAdvisor(req: Request<Record<string, string>, unknown, AskRecommendationBody>, res: Response, next: NextFunction) {
+      try {
+        res.json(await recommendationsService.askStoryAdvisor(req.body));
       } catch (error) {
         next(error);
       }

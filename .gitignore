@@ -5,12 +5,23 @@ coverage
 .env
 .env.local
 .env.*.local
+ai/.env
 *.log
 .DS_Store
+.venv/
+ai/.venv/
 data/raw/ml-25m
 .claude/
-docs/
 *.tsbuildinfo
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Local raw dataset - do not commit
 data/raw/books/*

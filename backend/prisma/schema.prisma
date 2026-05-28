@@ -42,6 +42,7 @@ model Story {
   discount              Float?
   contentPath           String?
   content               StoryContent?
+  chunks                StoryChunk[]
   reviews               Review[]
   externalReviews       ExternalReview[]
   userReviews           UserReview[]
@@ -69,6 +70,20 @@ model StoryContent {
   updatedAt DateTime @updatedAt
 
   @@map("story_contents")
+}
+
+model StoryChunk {
+  id         String                 @id @default(cuid())
+  storyId    String
+  chunkIndex Int
+  content    String
+  embedding  Unsupported("vector(384)")
+  story      Story                  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime               @default(now())
+
+  @@unique([storyId, chunkIndex])
+  @@index([storyId])
+  @@map("story_chunks")
 }
 
 model Review {
