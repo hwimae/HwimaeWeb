@@ -1,18 +1,18 @@
-# Nền tảng gợi ý phim cá nhân hoá (Movie Recommendation Platform)
+# Nền tảng gợi ý truyện cá nhân hoá (Story Recommendation Platform)
 
-Dự án full-stack cho bài toán gợi ý phim, gồm:
+Dự án full-stack cho bài toán gợi ý truyện chữ, gồm:
 
-- **Frontend**: Next.js (xem danh sách phim, chi tiết phim, đăng nhập/đăng ký, chấm điểm)
-- **Backend**: Node.js/Express + Prisma (auth, movies, ratings, import MovieLens)
-- **AI service**: thư mục Python/FastAPI (đang ở giai đoạn khởi tạo)
+- **Frontend**: Next.js (xem danh sách truyện, chi tiết truyện, đăng nhập/đăng ký, viết review)
+- **Backend**: Node.js/Express + Prisma (auth, stories, reviews, import dữ liệu sách/truyện)
+- **AI service**: thư mục Python/FastAPI (đang ở giai đoạn khởi tạo cho recommendation + RAG)
 - **Database**: PostgreSQL
 
 ## Cấu trúc thư mục
 
 - `frontend/` — ứng dụng web Next.js
 - `backend/` — API backend
-- `ai/` — dịch vụ AI (chuẩn bị cho recommendation models + RAG)
-- `data/raw/` — dữ liệu thô (ví dụ MovieLens)
+- `ai/` — dịch vụ AI (chuẩn bị cho recommendation models + RAG Story Assistant)
+- `data/raw/` — dữ liệu thô truyện/sách
 - `data/processed/` — dữ liệu đã xử lý
 
 ## Yêu cầu môi trường
@@ -32,7 +32,7 @@ pnpm install
 ## 2) Tạo và chạy PostgreSQL local
 
 ```bash
-docker run --name movie-recommendation-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=movie_recommendation -p 5432:5432 -d postgres:16
+docker run --name story-recommendation-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=story_recommendation -p 5432:5432 -d postgres:16
 ```
 
 ## 3) Cấu hình biến môi trường cho backend
@@ -40,7 +40,7 @@ docker run --name movie-recommendation-postgres -e POSTGRES_PASSWORD=postgres -e
 Tạo file `backend/.env`:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/movie_recommendation?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/story_recommendation?schema=public"
 JWT_SECRET="replace-with-a-long-random-secret"
 PORT=4000
 FRONTEND_URL="http://localhost:3000"
@@ -55,7 +55,7 @@ Ghi chú:
 
 ```bash
 pnpm --filter backend prisma:generate
-pnpm --filter backend prisma:migrate -- --name init
+pnpm --filter backend prisma:migrate -- --name story_refactor
 ```
 
 ## 5) Chạy ứng dụng
@@ -80,12 +80,23 @@ Terminal 2 (frontend):
 pnpm --filter frontend dev
 ```
 
-## 6) Import dữ liệu phim
+## 6) Import dữ liệu truyện
 
-Đặt file MovieLens tại: `data/raw/ml-25m/movies.csv`, sau đó chạy:
+Đặt dữ liệu raw tại `data/raw/books/`:
+
+```text
+data/raw/books/book_data.csv
+data/raw/books/book_id.csv
+data/raw/books/prepared_data_book.csv
+data/raw/books/comments.csv
+data/raw/books/output/*.txt
+```
+
+Sau đó chạy:
 
 ```bash
-pnpm --filter backend import:movies
+pnpm --filter backend import:stories
+pnpm --filter backend import:comments
 ```
 
 ## 7) Truy cập ứng dụng
@@ -114,7 +125,8 @@ pnpm --filter backend import:movies
 | `pnpm --filter backend test` | Chạy test backend |
 | `pnpm --filter backend prisma:generate` | Generate Prisma Client |
 | `pnpm --filter backend prisma:migrate -- --name <name>` | Tạo + apply migration |
-| `pnpm --filter backend import:movies` | Import dữ liệu MovieLens |
+| `pnpm --filter backend import:stories` | Import metadata truyện từ CSV |
+| `pnpm --filter backend import:comments` | Import review/comment truyện từ CSV |
 
 ### Frontend
 
@@ -127,4 +139,4 @@ pnpm --filter backend import:movies
 ## Trạng thái hiện tại
 
 - `ai/` hiện là khung ban đầu, chưa triển khai service FastAPI hoàn chỉnh.
-- Luồng MVP hiện tập trung vào nền tảng backend/frontend + dữ liệu + rating trước khi mở rộng recommendation models.
+- Luồng MVP hiện tập trung vào nền tảng backend/frontend + dữ liệu truyện + review trước khi mở rộng recommendation models.

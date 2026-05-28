@@ -42,13 +42,13 @@ main {
   border-radius: 0.5rem;
 }
 
-.movie-grid {
+.story-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1rem;
 }
 
-.movie-card {
+.story-card {
   display: block;
   border: 1px solid #1e293b;
   border-radius: 0.75rem;
@@ -56,13 +56,145 @@ main {
   background: #111827;
 }
 
-.movie-title {
+.story-title {
   margin: 0;
   font-size: 1rem;
 }
 
-.movie-meta {
+.story-meta {
   margin-top: 0.5rem;
   color: #94a3b8;
   font-size: 0.875rem;
+}
+
+.reader-panel {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+  background: #0b1220;
+}
+
+.story-reader {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 0.75rem;
+  color: #f8fafc;
+  line-height: 1.85;
+}
+
+.story-reader p {
+  margin: 0 0 1rem;
+}
+
+.story-list-controls {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.search-label {
+  display: grid;
+  gap: 0.35rem;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+}
+
+.search-input {
+  width: 100%;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #020617;
+  color: #f8fafc;
+}
+
+.content-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+}
+
+.checkbox {
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #64748b;
+  border-radius: 0.25rem;
+  color: #020617;
+  font-size: 0.75rem;
+}
+
+.checkbox-active {
+  border-color: #38bdf8;
+  background: #38bdf8;
+}
+
+.result-summary {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.warning-text {
+  margin: 0.25rem 0 0.75rem;
+  color: #b45309;
+  font-size: 0.875rem;
+}
+
+.recommendation-section {
+  margin-bottom: 2rem;
+}
+
+.recommendation-card {
+  border-color: #334155;
+  background: #0b1220;
+}
+
+.recommendation-score {
+  margin: 0.75rem 0 0;
+  color: #bae6fd;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.recommendation-reason {
+  margin: 0.5rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.story-badge {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  background: #064e3b;
+  color: #a7f3d0;
+  font-size: 0.75rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  color: #cbd5e1;
+}
+
+.pagination a,
+.pagination span {
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.pagination span {
+  color: #64748b;
 }
