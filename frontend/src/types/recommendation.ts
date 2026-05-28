@@ -17,7 +17,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseRecommendationItem(input: unknown): RecommendationItem {
+export function parseRecommendationItem(input: unknown): RecommendationItem {
   if (!isRecord(input)) throw new Error("Invalid recommendation: expected object");
 
   const { storyId, title, authors, category, averageRating, reviewCount, score, reason } = input;
@@ -42,4 +42,24 @@ export function parseRecommendationsResponse(input: unknown): RecommendationsRes
   if (!Array.isArray(items)) throw new Error("Invalid recommendations response.items: expected array");
 
   return { items: items.map(parseRecommendationItem) };
+}
+
+export type StoryAdvisorRecommendation = RecommendationItem;
+
+export type StoryAdvisorResponse = {
+  answer: string;
+  recommendations: StoryAdvisorRecommendation[];
+};
+
+export function parseStoryAdvisorResponse(input: unknown): StoryAdvisorResponse {
+  if (!isRecord(input)) throw new Error("Invalid story advisor response: expected object");
+
+  const { answer, recommendations } = input;
+
+  if (typeof answer !== "string") throw new Error("Invalid story advisor response.answer: expected string");
+  if (!Array.isArray(recommendations)) {
+    throw new Error("Invalid story advisor response.recommendations: expected array");
+  }
+
+  return { answer, recommendations: recommendations.map(parseRecommendationItem) };
 }

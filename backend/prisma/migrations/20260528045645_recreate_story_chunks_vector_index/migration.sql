@@ -1,0 +1,1 @@
+-- Superseded by 20260528000000_add_story_chunks_pgvector.

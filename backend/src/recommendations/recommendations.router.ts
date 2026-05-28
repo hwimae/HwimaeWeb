@@ -1,8 +1,13 @@
 import { Router } from 'express';
 import type { BackendDeps } from '../dependencies';
-import { validateQuery } from '../middleware/validate';
+import { validateBody, validateQuery } from '../middleware/validate';
 import { createRecommendationsController } from './recommendations.controller';
-import { recommendationsQuerySchema, type RecommendationsQuery } from './recommendations.schema';
+import {
+  askRecommendationSchema,
+  recommendationsQuerySchema,
+  type AskRecommendationBody,
+  type RecommendationsQuery,
+} from './recommendations.schema';
 import { createRecommendationsService } from './recommendations.service';
 
 export function createRecommendationsRouter(deps: BackendDeps): Router {
@@ -18,6 +23,11 @@ export function createRecommendationsRouter(deps: BackendDeps): Router {
     '/me',
     validateQuery(recommendationsQuerySchema),
     controller.listMyRecommendations,
+  );
+  router.post<Record<string, string>, unknown, AskRecommendationBody>(
+    '/ask',
+    validateBody(askRecommendationSchema),
+    controller.askStoryAdvisor,
   );
 
   return router;

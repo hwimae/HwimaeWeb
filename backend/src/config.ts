@@ -3,6 +3,7 @@ export type AppConfig = {
   jwtSecret: string;
   port: number;
   frontendUrl: string;
+  aiServiceUrl: string;
 };
 
 function requireEnv(name: string): string {
@@ -27,5 +28,6 @@ export function loadConfig(): AppConfig {
     jwtSecret: requireEnv('JWT_SECRET'),
     port: parsePort(process.env.PORT),
     frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://localhost:8000',
   };
 }
