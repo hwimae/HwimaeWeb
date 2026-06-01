@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { AuthUser } from '../auth/auth.schema';
 import type { BackendDeps } from '../dependencies';
 import { unauthorized } from '../errors';
@@ -11,8 +11,14 @@ declare global {
   }
 }
 
-export function requireAuth(deps: Pick<BackendDeps, 'prisma' | 'tokenService'>) {
-  return async (req: Request, _res: Response, next: NextFunction) => {
+export function requireAuth<
+  P = Record<string, string>,
+  ResBody = unknown,
+  ReqBody = unknown,
+  ReqQuery = unknown,
+  Locals extends Record<string, any> = Record<string, any>,
+>(deps: Pick<BackendDeps, 'prisma' | 'tokenService'>): RequestHandler<P, ResBody, ReqBody, ReqQuery, Locals> {
+  return async (req: Request<P, ResBody, ReqBody, ReqQuery, Locals>, _res: Response, next: NextFunction) => {
     try {
       const header = req.header('authorization');
       const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined;

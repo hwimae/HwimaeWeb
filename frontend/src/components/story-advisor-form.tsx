@@ -38,7 +38,7 @@ export function StoryAdvisorForm() {
       setResult(response);
     } catch (submitError) {
       console.error("[StoryAdvisorForm] Failed to ask story advisor", submitError);
-      setError("Không thể gọi AI tư vấn lúc này. Hãy kiểm tra backend, AI service, Ollama và dữ liệu StoryChunk.");
+      setError("Không thể gọi AI tư vấn lúc này. Hãy kiểm tra backend, AI service, Gemini API key và dữ liệu StoryChunk.");
       setResult(null);
     } finally {
       setIsLoading(false);

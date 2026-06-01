@@ -27,3 +27,7 @@ __pycache__/
 data/raw/books/*
 !data/raw/books/README.md
 !data/raw/books/.gitkeep
+
+# Local generated story storage - keep folder only
+backend/storage/stories/*
+!backend/storage/stories/.gitkeep

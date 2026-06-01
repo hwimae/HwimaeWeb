@@ -134,13 +134,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <section className="recommendation-section">
         <h2>Gợi ý truyện phổ biến</h2>
         <p className="result-summary">
-          Các truyện được xếp hạng theo rating và số lượng review từ dữ liệu gốc.
+          Các truyện được xếp hạng theo rating và số lượng review từ người dùng app.
         </p>
         {recommendationsHasError ? (
           <p className="warning-text">Không thể tải gợi ý truyện lúc này.</p>
         ) : null}
         {recommendations.items.length === 0 ? (
-          <p>Chưa có đủ tín hiệu review để tạo gợi ý.</p>
+          <p>Chưa có đủ review từ người dùng app để tạo gợi ý.</p>
         ) : (
           <div className="story-grid">
             {recommendations.items.map((item) => (
@@ -149,7 +149,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <p className="story-meta">Tác giả: {item.authors}</p>
                 <p className="story-meta">Thể loại: {item.category}</p>
                 <p className="story-meta">
-                  Dữ liệu gốc: {item.averageRating.toFixed(1)} ({item.reviewCount} review)
+                  Người dùng app: {item.averageRating.toFixed(1)} ({item.reviewCount} review)
                 </p>
                 <p className="recommendation-score">Score: {item.score.toFixed(2)}</p>
                 <p className="recommendation-reason">{item.reason}</p>
@@ -179,9 +179,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <Link key={story.id} href={`/stories/${story.id}`} className="story-card">
                   <h3 className="story-title">{story.title}</h3>
                   <p className="story-meta">Tác giả: {story.authors}</p>
-                  <p className="story-meta">
-                    Dữ liệu gốc: {story.externalAverageRating.toFixed(1)} ({story.externalReviewCount} review)
-                  </p>
                   <p className="story-meta">
                     Người dùng app: {story.userAverageRating.toFixed(1)} ({story.userReviewCount} review)
                   </p>

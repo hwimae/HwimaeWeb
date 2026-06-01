@@ -4,6 +4,8 @@ import { parse } from 'csv-parse/sync';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
+import { copyStoryContentToStorage } from '../storage/story-content-storage';
+
 type StoryCsvRow = {
   product_id: string;
   title: string;
@@ -60,8 +62,8 @@ export function parseStoryRows(csv: string, contentPathsByProductId: Map<string,
       currentPrice: parseNullableNumber(row.current_price),
       quantity: parseNullableInteger(row.quantity),
       category: normalizeString(row.category) ?? 'Others',
-      reviewCount: parseNullableInteger(row.n_review) ?? 0,
-      averageRating: parseNullableNumber(row.avg_rating) ?? 0,
+      reviewCount: 0,
+      averageRating: 0,
       pages: parseNullableInteger(row.pages),
       manufacturer: normalizeString(row.manufacturer),
       coverUrl: normalizeString(row.cover_link),
@@ -79,9 +81,29 @@ type ContentPathMatchReport = {
   ambiguous: Array<{ productId: number; title: string; authors: string; candidates: string[] }>;
 };
 
-export async function buildContentPathsByProductId(outputDir: string, stories: ParsedStory[]) {
+export async function copyMatchedContentToStorage(
+  outputDir: string,
+  matches: ContentPathMatchReport['matched'],
+  backendRoot = resolve(process.cwd()),
+): Promise<Map<string, string>> {
+  const contentPathsByProductId = new Map<string, string>();
+
+  for (const match of matches) {
+    const sourcePath = join(outputDir, match.fileName);
+    const storedRelativePath = await copyStoryContentToStorage(sourcePath, match.productId, backendRoot);
+    contentPathsByProductId.set(String(match.productId), storedRelativePath);
+  }
+
+  return contentPathsByProductId;
+}
+
+export async function buildContentPathsByProductId(
+  outputDir: string,
+  stories: ParsedStory[],
+  backendRoot = resolve(process.cwd()),
+) {
   const report = await buildContentPathMatchReport(outputDir, stories);
-  return new Map(report.matched.map((match) => [String(match.productId), join(outputDir, match.fileName)]));
+  return copyMatchedContentToStorage(outputDir, report.matched, backendRoot);
 }
 
 export async function buildContentPathMatchReport(outputDir: string, stories: ParsedStory[]): Promise<ContentPathMatchReport> {
@@ -147,7 +169,7 @@ function removeEditionNoise(value: string): string {
     .replace(/\b(tái bản|tai ban|bìa cứng|bia cung|ấn bản|an ban|kỷ niệm|ky niem)\b.*$/gi, ' ');
 }
 
-type ImportStoriesPrisma = Pick<PrismaClient, 'story' | 'storyContent' | '$transaction'>;
+type ImportStoriesPrisma = Pick<PrismaClient, 'story' | '$transaction'>;
 
 export async function importStoriesFromCsv(
   prisma: ImportStoriesPrisma,
@@ -158,27 +180,11 @@ export async function importStoriesFromCsv(
 
   for (const story of stories) {
     await prisma.$transaction(async (tx) => {
-      const content = story.contentPath ? await readFile(story.contentPath, 'utf8') : null;
-      const importedStory = await tx.story.upsert({
+      await tx.story.upsert({
         where: { productId: story.productId },
         create: toPrismaStoryCreateData(story),
         update: toPrismaStoryUpdateData(story),
       });
-
-      if (content !== null) {
-        await tx.storyContent.upsert({
-          where: { storyId: importedStory.id },
-          create: {
-            storyId: importedStory.id,
-            content,
-          },
-          update: {
-            content,
-          },
-        });
-      } else {
-        await tx.storyContent.deleteMany({ where: { storyId: importedStory.id } });
-      }
     });
   }
 
@@ -199,10 +205,10 @@ function toPrismaStoryUpdateData(story: ParsedStory) {
     originalPrice: story.originalPrice,
     currentPrice: story.currentPrice,
     quantity: story.quantity,
-    averageRating: story.averageRating,
-    reviewCount: story.reviewCount,
-    externalAverageRating: story.averageRating,
-    externalReviewCount: story.reviewCount,
+    averageRating: 0,
+    reviewCount: 0,
+    externalAverageRating: 0,
+    externalReviewCount: 0,
     pages: story.pages,
     manufacturer: story.manufacturer,
     coverUrl: story.coverUrl,
@@ -254,7 +260,7 @@ async function importStories(csvPath: string, outputDir: string, reportPath: str
     const stories = parseStoryRows(csv, new Map());
     const report = await buildContentPathMatchReport(outputDir, stories);
     await writeContentPathMatchReport(reportPath, report);
-    const contentPathsByProductId = new Map(report.matched.map((match) => [String(match.productId), join(outputDir, match.fileName)]));
+    const contentPathsByProductId = await copyMatchedContentToStorage(outputDir, report.matched);
     const count = await importStoriesFromCsv(prisma, csv, contentPathsByProductId);
 
     console.log(`Imported ${count} stories from ${csvPath}`);

@@ -1,11 +1,18 @@
 import { Prisma } from '@prisma/client';
 import type { BackendDeps } from '../dependencies';
 import { notFound } from '../errors';
+import { readStoryContentFromStorage } from '../storage/story-content-storage';
 import type { ListStoriesQuery } from './stories.schema';
 
-type StoryWithCategory = Prisma.StoryGetPayload<{ include: { category: true; content: { select: { id: true } } } }>;
+type StoryContentReader = { read(relativePath: string): Promise<string | null> };
 
-export type StoryResponse = Omit<StoryWithCategory, 'category' | 'contentPath' | 'content'> & {
+type StoriesServiceDeps = Pick<BackendDeps, 'prisma'> & {
+  storyContentReader?: StoryContentReader;
+};
+
+type StoryWithCategory = Prisma.StoryGetPayload<{ include: { category: true } }>;
+
+export type StoryResponse = Omit<StoryWithCategory, 'category' | 'contentPath'> & {
   category: string;
   hasContent: boolean;
 };
@@ -29,7 +36,11 @@ export type StoriesService = {
   getStoryContentById(id: string): Promise<StoryContentResponse>;
 };
 
-export function createStoriesService(deps: Pick<BackendDeps, 'prisma'>): StoriesService {
+export function createStoriesService(deps: StoriesServiceDeps): StoriesService {
+  const storyContentReader: StoryContentReader = deps.storyContentReader ?? {
+    read: readStoryContentFromStorage,
+  };
+
   return {
     async listStories(query) {
       const where: Prisma.StoryWhereInput = {
@@ -42,13 +53,13 @@ export function createStoriesService(deps: Pick<BackendDeps, 'prisma'>): Stories
               ],
             }
           : {}),
-        ...(query.hasContent === true ? { content: { isNot: null } } : {}),
+        ...(query.hasContent === true ? { contentPath: { not: null } } : {}),
       };
 
       const [items, total] = await deps.prisma.$transaction([
         deps.prisma.story.findMany({
           where,
-          include: { category: true, content: { select: { id: true } } },
+          include: { category: true },
           orderBy: [{ externalReviewCount: 'desc' }, { externalAverageRating: 'desc' }, { title: 'asc' }],
           skip: (query.page - 1) * query.limit,
           take: query.limit,
@@ -60,7 +71,7 @@ export function createStoriesService(deps: Pick<BackendDeps, 'prisma'>): Stories
     },
 
     async getStoryById(id) {
-      const story = await deps.prisma.story.findUnique({ where: { id }, include: { category: true, content: { select: { id: true } } } });
+      const story = await deps.prisma.story.findUnique({ where: { id }, include: { category: true } });
 
       if (!story) {
         throw notFound('Story not found');
@@ -70,25 +81,31 @@ export function createStoriesService(deps: Pick<BackendDeps, 'prisma'>): Stories
     },
 
     async getStoryContentById(id) {
-      const storyContent = await deps.prisma.storyContent.findUnique({
-        where: { storyId: id },
-        include: { story: { select: { title: true } } },
+      const story = await deps.prisma.story.findUnique({
+        where: { id },
+        select: { id: true, title: true, contentPath: true },
       });
 
-      if (!storyContent) {
+      if (!story || !story.contentPath) {
+        throw notFound('Story content not found');
+      }
+
+      const content = await storyContentReader.read(story.contentPath);
+
+      if (content === null) {
         throw notFound('Story content not found');
       }
 
       return {
-        storyId: storyContent.storyId,
-        title: storyContent.story.title,
-        content: storyContent.content,
+        storyId: story.id,
+        title: story.title,
+        content,
       };
     },
   };
 }
 
 function toStoryResponse(story: StoryWithCategory): StoryResponse {
-  const { category, contentPath: _contentPath, content, ...publicStory } = story;
-  return { ...publicStory, category: category.name, hasContent: content !== null };
+  const { category, contentPath, ...publicStory } = story;
+  return { ...publicStory, category: category.name, hasContent: contentPath !== null };
 }

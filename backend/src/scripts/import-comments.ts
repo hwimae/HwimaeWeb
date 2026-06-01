@@ -1,4 +1,3 @@
-import type { PrismaClient } from '@prisma/client';
 import { PrismaClient as DefaultPrismaClient } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
 import { readFile } from 'node:fs/promises';
@@ -40,58 +39,8 @@ export function parseReviewRows(csv: string): ParsedReview[] {
   }));
 }
 
-export async function importReviewsFromCsv(prisma: Pick<PrismaClient, 'story' | 'externalReview'>, csv: string) {
-  const reviews = parseReviewRows(csv);
-  const affectedStoryIds = new Set<string>();
-  let importedCount = 0;
-
-  for (const review of reviews) {
-    const story = await prisma.story.findUnique({ where: { productId: review.productId }, select: { id: true } });
-    if (!story) continue;
-
-    await prisma.externalReview.upsert({
-      where: { externalCommentId: review.externalCommentId },
-      create: {
-        storyId: story.id,
-        externalCommentId: review.externalCommentId,
-        externalCustomerId: review.externalCustomerId,
-        rating: review.rating,
-        title: review.title,
-        content: review.content,
-        thankCount: review.thankCount,
-      },
-      update: {
-        storyId: story.id,
-        externalCustomerId: review.externalCustomerId,
-        rating: review.rating,
-        title: review.title,
-        content: review.content,
-        thankCount: review.thankCount,
-      },
-    });
-    affectedStoryIds.add(story.id);
-    importedCount += 1;
-  }
-
-  for (const storyId of affectedStoryIds) {
-    const aggregate = await prisma.externalReview.aggregate({
-      where: { storyId },
-      _avg: { rating: true },
-      _count: { _all: true },
-    });
-
-    await prisma.story.update({
-      where: { id: storyId },
-      data: {
-        averageRating: aggregate._avg.rating ?? 0,
-        reviewCount: aggregate._count._all,
-        externalAverageRating: aggregate._avg.rating ?? 0,
-        externalReviewCount: aggregate._count._all,
-      },
-    });
-  }
-
-  return importedCount;
+export async function importReviewsFromCsv(_prisma: unknown, _csv: string) {
+  return 0;
 }
 
 async function importReviews(csvPath: string) {
@@ -99,9 +48,12 @@ async function importReviews(csvPath: string) {
 
   try {
     const csv = await readFile(csvPath, 'utf8');
-    const count = await importReviewsFromCsv(prisma, csv);
+    const parsedCount = parseReviewRows(csv).length;
+    const importedCount = await importReviewsFromCsv(prisma, csv);
 
-    console.log(`Imported ${count} reviews from ${csvPath}`);
+    console.log(
+      `Comment dataset import is disabled for MVP. Parsed ${parsedCount} comments from ${csvPath}, imported ${importedCount}.`,
+    );
   } finally {
     await prisma.$disconnect();
   }
