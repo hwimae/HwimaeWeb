@@ -12,7 +12,6 @@ model User {
   email        String       @unique
   passwordHash String
   name         String
-  reviews      Review[]
   userReviews  UserReview[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -21,33 +20,30 @@ model User {
 }
 
 model Story {
-  id                    String           @id @default(cuid())
-  productId             Int              @unique
+  id                    String       @id @default(cuid())
+  productId             Int          @unique
   title                 String
   authors               String
   originalPrice         Float?
   currentPrice          Float?
   quantity              Int?
   categoryId            String
-  category              Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  averageRating         Float            @default(0)
-  reviewCount           Int              @default(0)
-  externalAverageRating Float            @default(0)
-  externalReviewCount   Int              @default(0)
-  userAverageRating     Float            @default(0)
-  userReviewCount       Int              @default(0)
+  category              Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  averageRating         Float        @default(0)
+  reviewCount           Int          @default(0)
+  externalAverageRating Float        @default(0)
+  externalReviewCount   Int          @default(0)
+  userAverageRating     Float        @default(0)
+  userReviewCount       Int          @default(0)
   pages                 Int?
   manufacturer          String?
   coverUrl              String?
   discount              Float?
   contentPath           String?
-  content               StoryContent?
   chunks                StoryChunk[]
-  reviews               Review[]
-  externalReviews       ExternalReview[]
   userReviews           UserReview[]
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   @@index([categoryId])
   @@map("stories")
@@ -59,17 +55,6 @@ model Category {
   stories Story[]
 
   @@map("categories")
-}
-
-model StoryContent {
-  id        String   @id @default(cuid())
-  storyId   String   @unique
-  content   String
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("story_contents")
 }
 
 model StoryChunk {
@@ -84,46 +69,6 @@ model StoryChunk {
   @@unique([storyId, chunkIndex])
   @@index([storyId])
   @@map("story_chunks")
-}
-
-model Review {
-  id                 String   @id @default(cuid())
-  userId             String?
-  storyId            String
-  externalCustomerId String?
-  externalCommentId  String?  @unique
-  rating             Float
-  title              String
-  content            String
-  thankCount         Int      @default(0)
-  source             String   @default("user")
-  reviewedAt         DateTime @default(now())
-  user               User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  story              Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@unique([userId, storyId])
-  @@index([storyId])
-  @@map("reviews")
-}
-
-model ExternalReview {
-  id                 String   @id @default(cuid())
-  storyId            String
-  externalCustomerId String?
-  externalCommentId  String   @unique
-  rating             Float
-  title              String
-  content            String
-  thankCount         Int      @default(0)
-  reviewedAt         DateTime @default(now())
-  story              Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([storyId])
-  @@map("external_reviews")
 }
 
 model UserReview {

@@ -4,6 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Ngôn ngữ làm việc
 
+- Mỗi lần trả lời user, luôn bắt đầu bằng lời chào có tên `boo`.
 - Luôn làm việc và trao đổi với user bằng tiếng Việt.
 - Tạo/cập nhật tài liệu hướng người dùng bằng tiếng Việt, trừ khi user yêu cầu ngôn ngữ khác.
 

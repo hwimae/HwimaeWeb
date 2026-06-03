@@ -1,13 +1,17 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { unauthorized } from '../errors';
+import type { ListMyReviewsQuery } from './reviews.schema';
 import type { ReviewsService } from './reviews.service';
+
+type ListMyReviewsRequest = Request<Record<string, string>, unknown, unknown, ListMyReviewsQuery>;
+type ListMyReviewsHandler = RequestHandler<Record<string, string>, unknown, unknown, ListMyReviewsQuery>;
 
 export type ReviewsController = {
   reviewStory: RequestHandler;
-  listMyReviews: RequestHandler;
+  listMyReviews: ListMyReviewsHandler;
 };
 
-function getUserId(req: Request, next: NextFunction): string | undefined {
+function getUserId(req: Request<any, any, any, any>, next: NextFunction): string | undefined {
   if (!req.user) {
     next(unauthorized('Unauthorized'));
     return undefined;
@@ -29,12 +33,12 @@ export function createReviewsController(reviewsService: ReviewsService): Reviews
       }
     },
 
-    async listMyReviews(req: Request, res: Response, next: NextFunction) {
+    async listMyReviews(req: ListMyReviewsRequest, res: Response, next: NextFunction) {
       const userId = getUserId(req, next);
       if (!userId) return;
 
       try {
-        res.json(await reviewsService.listMyReviews(userId));
+        res.json(await reviewsService.listMyReviews(userId, req.query));
       } catch (error) {
         next(error);
       }

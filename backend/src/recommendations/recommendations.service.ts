@@ -111,8 +111,8 @@ async function searchStoryChunks(deps: Pick<BackendDeps, 'prisma'>, embedding: n
       s.title AS "title",
       s.authors AS "authors",
       c.name AS "category",
-      s."externalAverageRating" AS "averageRating",
-      s."externalReviewCount" AS "reviewCount",
+      s."userAverageRating" AS "averageRating",
+      s."userReviewCount" AS "reviewCount",
       sc.content AS "chunkContent",
       sc.embedding <=> ${vector}::vector AS "distance"
     FROM "story_chunks" sc
@@ -176,17 +176,18 @@ async function listRecommendations(
 ): Promise<RecommendationsResponse> {
   const stories = await deps.prisma.story.findMany({
     where: {
-      externalAverageRating: { gt: 0 },
-      externalReviewCount: { gt: 0 },
+      userAverageRating: { gt: 0 },
+      userReviewCount: { gt: 0 },
       ...(excludedStoryIds.length > 0 ? { id: { notIn: excludedStoryIds } } : {}),
     },
     include: { category: true },
-    orderBy: [{ externalReviewCount: 'desc' }, { externalAverageRating: 'desc' }, { title: 'asc' }],
+    orderBy: [{ userReviewCount: 'desc' }, { userAverageRating: 'desc' }, { title: 'asc' }],
+    take: query.limit,
   });
 
   return {
     items: stories
-      .filter((story) => story.externalAverageRating > 0 && story.externalReviewCount > 0 && !excludedStoryIds.includes(story.id))
+      .filter((story) => story.userAverageRating > 0 && story.userReviewCount > 0 && !excludedStoryIds.includes(story.id))
       .map(toRecommendationItem)
       .sort(compareRecommendationItems)
       .slice(0, query.limit),
@@ -199,10 +200,10 @@ function toRecommendationItem(story: StoryCandidate): RecommendationItem {
     title: story.title,
     authors: story.authors,
     category: story.category.name,
-    averageRating: story.externalAverageRating,
-    reviewCount: story.externalReviewCount,
-    score: story.externalAverageRating * Math.log1p(story.externalReviewCount),
-    reason: `Truyện đạt ${story.externalAverageRating.toFixed(1)}/5 từ ${story.externalReviewCount.toLocaleString('vi-VN')} review dữ liệu gốc, nên được ưu tiên trong nhóm truyện phổ biến.`,
+    averageRating: story.userAverageRating,
+    reviewCount: story.userReviewCount,
+    score: story.userAverageRating * Math.log1p(story.userReviewCount),
+    reason: `Truyện đạt ${story.userAverageRating.toFixed(1)}/5 từ ${story.userReviewCount.toLocaleString('vi-VN')} review từ người dùng app.`,
   };
 }
 

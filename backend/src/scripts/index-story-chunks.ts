@@ -2,6 +2,7 @@ import { Prisma, PrismaClient, type Prisma as PrismaType } from '@prisma/client'
 import { loadConfig } from '../config';
 import { createAiClient } from '../recommendations/ai-client';
 import { chunkStoryContent } from '../recommendations/story-chunker';
+import { readStoryContentFromStorage } from '../storage/story-content-storage';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 500;
@@ -50,7 +51,7 @@ export function parseIndexStoryChunksArgs(args: string[]): IndexStoryChunksOptio
 
 export function buildStoryIndexWhere(options: IndexStoryChunksOptions): PrismaType.StoryWhereInput {
   return {
-    content: { isNot: null },
+    contentPath: { not: null },
     ...(options.after ? { id: { gt: options.after } } : {}),
     ...(options.force ? {} : { chunks: { none: {} } }),
   };
@@ -104,15 +105,21 @@ async function main() {
   try {
     const stories = await prisma.story.findMany({
       where: buildStoryIndexWhere(options),
-      include: { content: true },
+      select: { id: true, title: true, contentPath: true },
       orderBy: { id: 'asc' },
       take: options.limit,
     });
 
     for (const story of stories) {
-      if (!story.content) continue;
+      if (!story.contentPath) continue;
 
-      const chunks = chunkStoryContent(story.content.content);
+      const content = await readStoryContentFromStorage(story.contentPath);
+      if (content === null) {
+        console.warn(`Skipped ${story.title}: content file not found at ${story.contentPath}`);
+        continue;
+      }
+
+      const chunks = chunkStoryContent(content);
       const chunksWithEmbeddings: Array<{ chunkIndex: number; content: string; embedding: number[] }> = [];
 
       for (const chunk of chunks) {

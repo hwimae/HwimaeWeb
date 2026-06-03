@@ -33,6 +33,48 @@ const candidateRows = [
   },
 ];
 
+describe('listPopularRecommendations', () => {
+  it('queries and maps popular stories using app user review aggregates', async () => {
+    const story = {
+      id: 'story-10',
+      title: 'Kiếm Lộ',
+      authors: 'Tác giả C',
+      categoryId: 'cat-1',
+      category: { id: 'cat-1', name: 'Tiên hiệp' },
+      userAverageRating: 4.7,
+      userReviewCount: 321,
+      externalAverageRating: 4.9,
+      externalReviewCount: 9999,
+    };
+
+    const prisma = {
+      story: {
+        findMany: jest.fn().mockResolvedValue([story]),
+      },
+    };
+    const service = createRecommendationsService({ prisma } as never);
+    const query = { limit: 5 };
+
+    const result = await service.listPopularRecommendations(query);
+
+    expect(prisma.story.findMany).toHaveBeenCalledWith({
+      where: { userAverageRating: { gt: 0 }, userReviewCount: { gt: 0 } },
+      include: { category: true },
+      orderBy: [{ userReviewCount: 'desc' }, { userAverageRating: 'desc' }, { title: 'asc' }],
+      take: query.limit,
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        storyId: 'story-10',
+        averageRating: story.userAverageRating,
+        reviewCount: story.userReviewCount,
+      }),
+    );
+    expect(result.items[0].reason).toContain('review từ người dùng app');
+  });
+});
+
 describe('askStoryAdvisor', () => {
   it('groups vector matches by story and asks AI for an answer', async () => {
     const prisma = {
@@ -65,7 +107,7 @@ describe('askStoryAdvisor', () => {
     };
     const aiClient = {
       embedText: jest.fn().mockResolvedValue(Array.from({ length: 384 }, () => 0.01)),
-      generateAdvisorAnswer: jest.fn().mockRejectedValue(new Error('Ollama is not running')),
+      generateAdvisorAnswer: jest.fn().mockRejectedValue(new Error('Gemini is not available')),
     };
     const service = createRecommendationsService({ prisma, aiClient } as never);
 

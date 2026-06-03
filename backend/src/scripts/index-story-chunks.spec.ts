@@ -26,20 +26,20 @@ describe('parseIndexStoryChunksArgs', () => {
 describe('buildStoryIndexWhere', () => {
   it('skips stories that already have chunks by default', () => {
     expect(buildStoryIndexWhere({ limit: 20, force: false })).toEqual({
-      content: { isNot: null },
+      contentPath: { not: null },
       chunks: { none: {} },
     });
   });
 
   it('includes already indexed stories when force is enabled', () => {
     expect(buildStoryIndexWhere({ limit: 20, force: true })).toEqual({
-      content: { isNot: null },
+      contentPath: { not: null },
     });
   });
 
   it('adds cursor filter when after is provided', () => {
     expect(buildStoryIndexWhere({ limit: 20, after: 'story-1', force: false })).toEqual({
-      content: { isNot: null },
+      contentPath: { not: null },
       id: { gt: 'story-1' },
       chunks: { none: {} },
     });

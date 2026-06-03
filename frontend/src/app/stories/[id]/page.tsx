@@ -57,9 +57,6 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
         <strong>Thể loại:</strong> {story.category}
       </p>
       <p>
-        <strong>Đánh giá từ dữ liệu gốc:</strong> {story.externalAverageRating.toFixed(1)} / 5 ({story.externalReviewCount} review)
-      </p>
-      <p>
         <strong>Đánh giá từ người dùng app:</strong> {story.userAverageRating.toFixed(1)} / 5 ({story.userReviewCount} review)
       </p>
       <p>
@@ -83,7 +80,7 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
             )}
           </article>
         ) : (
-          <p>Truyện này chưa có nội dung đọc trong database. Hãy chạy lại import sau khi migrate database.</p>
+          <p>Truyện này chưa có nội dung đọc trong storage. Hãy chạy lại import stories để copy nội dung vào storage.</p>
         )}
       </section>
 

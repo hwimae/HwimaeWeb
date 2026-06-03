@@ -1,7 +1,7 @@
 import { Prisma, UserReview } from '@prisma/client';
 import type { BackendDeps } from '../dependencies';
 import { notFound } from '../errors';
-import type { ReviewStoryInput } from './reviews.schema';
+import type { ListMyReviewsQuery, ReviewStoryInput } from './reviews.schema';
 
 export type MyReview = Prisma.UserReviewGetPayload<{
   include: {
@@ -19,9 +19,16 @@ export type MyReview = Prisma.UserReviewGetPayload<{
   };
 }>;
 
+export type PaginatedMyReviews = {
+  items: MyReview[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 export type ReviewsService = {
   reviewStory(userId: string, input: ReviewStoryInput): Promise<UserReview>;
-  listMyReviews(userId: string): Promise<MyReview[]>;
+  listMyReviews(userId: string, query: ListMyReviewsQuery): Promise<PaginatedMyReviews>;
 };
 
 export function createReviewsService(deps: Pick<BackendDeps, 'prisma'>): ReviewsService {
@@ -83,24 +90,35 @@ export function createReviewsService(deps: Pick<BackendDeps, 'prisma'>): Reviews
       throw new Error('Unreachable retry state in reviewStory');
     },
 
-    listMyReviews(userId) {
-      return deps.prisma.userReview.findMany({
-        where: { userId },
-        include: {
-          story: {
-            select: {
-              id: true,
-              title: true,
-              authors: true,
-              externalAverageRating: true,
-              externalReviewCount: true,
-              userAverageRating: true,
-              userReviewCount: true,
+    async listMyReviews(userId, query) {
+      const where = { userId };
+      const { page, limit } = query;
+      const skip = (page - 1) * limit;
+
+      const [items, total] = await deps.prisma.$transaction([
+        deps.prisma.userReview.findMany({
+          where,
+          include: {
+            story: {
+              select: {
+                id: true,
+                title: true,
+                authors: true,
+                externalAverageRating: true,
+                externalReviewCount: true,
+                userAverageRating: true,
+                userReviewCount: true,
+              },
             },
           },
-        },
-        orderBy: { reviewedAt: 'desc' },
-      });
+          orderBy: { reviewedAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        deps.prisma.userReview.count({ where }),
+      ]);
+
+      return { items, total, page, limit };
     },
   };
 }
