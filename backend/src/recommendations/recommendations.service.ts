@@ -118,6 +118,10 @@ async function searchStoryChunks(deps: Pick<BackendDeps, 'prisma'>, embedding: n
     FROM "story_chunks" sc
     INNER JOIN "stories" s ON s.id = sc."storyId"
     INNER JOIN "categories" c ON c.id = s."categoryId"
+    WHERE s."contentPath" IS NOT NULL
+      AND s."contentIndexedAt" IS NOT NULL
+      AND s."contentUpdatedAt" IS NOT NULL
+      AND s."contentIndexedAt" >= s."contentUpdatedAt"
     ORDER BY sc.embedding <=> ${vector}::vector
     LIMIT ${limit}
   `;

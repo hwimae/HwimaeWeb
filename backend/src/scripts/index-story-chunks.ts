@@ -11,13 +11,25 @@ export type IndexStoryChunksOptions = {
   limit: number;
   after?: string;
   force: boolean;
+  dryRun: boolean;
+};
+
+type StoryIndexCandidate = {
+  id: string;
+  title: string;
+  contentPath: string | null;
+  contentUpdatedAt: Date | null;
 };
 
 export function parseIndexStoryChunksArgs(args: string[]): IndexStoryChunksOptions {
-  const options: IndexStoryChunksOptions = { limit: DEFAULT_LIMIT, force: false };
+  const options: IndexStoryChunksOptions = { limit: DEFAULT_LIMIT, force: false, dryRun: false };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
+
+    if (arg === '--') {
+      continue;
+    }
 
     if (arg === '--limit') {
       options.limit = parseLimit(args[index + 1]);
@@ -38,6 +50,11 @@ export function parseIndexStoryChunksArgs(args: string[]): IndexStoryChunksOptio
       continue;
     }
 
+    if (arg === '--dry-run') {
+      options.dryRun = true;
+      continue;
+    }
+
     if (!arg.startsWith('--') && index === 0) {
       options.limit = parseLimit(arg);
       continue;
@@ -53,7 +70,33 @@ export function buildStoryIndexWhere(options: IndexStoryChunksOptions): PrismaTy
   return {
     contentPath: { not: null },
     ...(options.after ? { id: { gt: options.after } } : {}),
-    ...(options.force ? {} : { chunks: { none: {} } }),
+  };
+}
+
+async function findStoryIndexCandidates(
+  prisma: PrismaClient,
+  options: IndexStoryChunksOptions,
+): Promise<StoryIndexCandidate[]> {
+  const stalePredicate = options.force
+    ? Prisma.empty
+    : Prisma.sql`AND ("contentIndexedAt" IS NULL OR "contentUpdatedAt" IS NULL OR "contentUpdatedAt" > "contentIndexedAt")`;
+  const afterPredicate = options.after ? Prisma.sql`AND "id" > ${options.after}` : Prisma.empty;
+
+  return prisma.$queryRaw<StoryIndexCandidate[]>`
+    SELECT "id", "title", "contentPath", "contentUpdatedAt"
+    FROM "stories"
+    WHERE "contentPath" IS NOT NULL
+    ${stalePredicate}
+    ${afterPredicate}
+    ORDER BY "id" ASC
+    LIMIT ${options.limit}
+  `;
+}
+
+export function buildIndexMetadataUpdateData(contentUpdatedAt: Date | null, indexedAt: Date) {
+  return {
+    contentIndexedAt: indexedAt,
+    ...(contentUpdatedAt === null ? { contentUpdatedAt: indexedAt } : {}),
   };
 }
 
@@ -100,15 +143,23 @@ async function main() {
   const options = parseIndexStoryChunksArgs(process.argv.slice(2));
   const config = loadConfig();
   const prisma = new PrismaClient();
-  const aiClient = createAiClient(config.aiServiceUrl);
+  const aiClient = options.dryRun ? null : createAiClient(config.aiServiceUrl);
 
   try {
-    const stories = await prisma.story.findMany({
-      where: buildStoryIndexWhere(options),
-      select: { id: true, title: true, contentPath: true },
-      orderBy: { id: 'asc' },
-      take: options.limit,
-    });
+    const stories = await findStoryIndexCandidates(prisma, options);
+
+    if (options.dryRun) {
+      console.log(`Dry run: ${stories.length} stories need indexing`);
+      for (const story of stories) {
+        console.log(`${story.id}\t${story.title}`);
+      }
+
+      const lastStory = stories.at(-1);
+      if (lastStory) {
+        console.log(`Next cursor: ${lastStory.id}`);
+      }
+      return;
+    }
 
     for (const story of stories) {
       if (!story.contentPath) continue;
@@ -122,12 +173,21 @@ async function main() {
       const chunks = chunkStoryContent(content);
       const chunksWithEmbeddings: Array<{ chunkIndex: number; content: string; embedding: number[] }> = [];
 
+      if (!aiClient) {
+        throw new Error('AI client is required when not running dry-run');
+      }
+
       for (const chunk of chunks) {
         const embedding = await aiClient.embedText(`passage: ${chunk.content}`);
         chunksWithEmbeddings.push({ ...chunk, embedding });
       }
 
       await replaceStoryChunks(prisma, story.id, chunksWithEmbeddings);
+      const indexedAt = new Date();
+      await prisma.story.update({
+        where: { id: story.id },
+        data: buildIndexMetadataUpdateData(story.contentUpdatedAt, indexedAt),
+      });
       console.log(`Indexed ${chunksWithEmbeddings.length} chunks for ${story.title}`);
     }
 

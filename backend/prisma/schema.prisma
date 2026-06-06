@@ -12,11 +12,62 @@ model User {
   email        String       @unique
   passwordHash String
   name         String
+  ratings      Rating[]
   userReviews  UserReview[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   @@map("users")
+}
+
+model Movie {
+  id            String       @id @default(cuid())
+  movielensId   Int          @unique
+  title         String
+  releaseYear   Int?
+  overview      String?
+  posterUrl     String?
+  averageRating Float        @default(0)
+  ratingCount   Int          @default(0)
+  movieGenres   MovieGenre[]
+  ratings       Rating[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("movies")
+}
+
+model Genre {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  movieGenres MovieGenre[]
+
+  @@map("genres")
+}
+
+model MovieGenre {
+  movieId String
+  genreId String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, genreId])
+  @@index([genreId])
+  @@map("movie_genres")
+}
+
+model Rating {
+  id      String   @id @default(cuid())
+  userId  String
+  movieId String
+  rating  Float
+  ratedAt DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie   Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([movieId])
+  @@map("ratings")
 }
 
 model Story {
@@ -40,12 +91,16 @@ model Story {
   coverUrl              String?
   discount              Float?
   contentPath           String?
+  contentHash           String?
+  contentUpdatedAt      DateTime?
+  contentIndexedAt      DateTime?
   chunks                StoryChunk[]
   userReviews           UserReview[]
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
   @@index([categoryId])
+  @@index([contentPath, contentUpdatedAt, contentIndexedAt], map: "stories_content_index_state_idx")
   @@map("stories")
 }
 
@@ -58,13 +113,13 @@ model Category {
 }
 
 model StoryChunk {
-  id         String                 @id @default(cuid())
+  id         String                     @id @default(cuid())
   storyId    String
   chunkIndex Int
   content    String
   embedding  Unsupported("vector(384)")
-  story      Story                  @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  createdAt  DateTime               @default(now())
+  story      Story                      @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime                   @default(now())
 
   @@unique([storyId, chunkIndex])
   @@index([storyId])

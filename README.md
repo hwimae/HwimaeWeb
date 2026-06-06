@@ -139,6 +139,16 @@ deactivate
 
 Database cần PostgreSQL và extension `vector`.
 
+Lưu ý: thư mục `backend/prisma/migrations/` đã được squash lại thành 5 phase:
+
+1. `platform-foundation`
+2. `movie-foundation`
+3. `story-foundation`
+4. `story-ai-retrieval`
+5. `story-content-storage-state`
+
+Local PostgreSQL bắt buộc phải có extension `pgvector` để migration phase 4 `story-ai-retrieval` chạy thành công.
+
 Nếu dùng Docker, nên dùng image có sẵn pgvector thay vì image `postgres` thường. Ví dụ:
 
 ```powershell
@@ -167,6 +177,14 @@ ai/.env
 Theo mẫu ở phần **Biến môi trường**.
 
 ### 5. Apply migration và generate Prisma client
+
+Nếu local database của bạn trước đây đang dùng migration history cũ trước khi squash, hãy reset local database trước:
+
+```powershell
+pnpm --dir backend exec prisma migrate reset --force
+```
+
+Sau đó chạy:
 
 ```powershell
 pnpm --dir backend prisma:migrate
@@ -204,12 +222,30 @@ Chỉ cần chạy lại khi dữ liệu raw thay đổi hoặc bạn reset data
 
 ### 7. Index nội dung truyện cho AI search
 
-Bước này cần AI service đang chạy ở terminal khác vì script sẽ gọi `POST /embed`.
+Script index dùng metadata trên `Story` để biết chunks RAG đang stale hay fresh:
 
-Chạy mặc định 20 truyện chưa index:
+- `contentHash`: SHA-256 của file nội dung truyện.
+- `contentUpdatedAt`: thời điểm nội dung file thay đổi.
+- `contentIndexedAt`: thời điểm chunks/embedding được index thành công.
+
+Truyện được xem là cần index/re-index khi chưa có `contentIndexedAt`, thiếu `contentUpdatedAt`, hoặc `contentUpdatedAt > contentIndexedAt`.
+
+Kiểm tra truyện nào cần index/re-index mà không gọi AI service và không ghi DB:
+
+```powershell
+pnpm --dir backend index:story-chunks -- --dry-run
+```
+
+Index các truyện stale/chưa index. Bước này cần AI service đang chạy ở terminal khác vì script sẽ gọi `POST /embed`:
 
 ```powershell
 pnpm --dir backend index:story-chunks
+```
+
+Force re-index cả truyện đã có chunks, kể cả khi metadata đang fresh:
+
+```powershell
+pnpm --dir backend index:story-chunks -- --force
 ```
 
 Chạy batch lớn hơn:
@@ -224,17 +260,12 @@ Chạy tiếp từ cursor đã log:
 pnpm --dir backend index:story-chunks -- --limit 100 --after <storyId>
 ```
 
-Re-index cả truyện đã có chunks:
-
-```powershell
-pnpm --dir backend index:story-chunks -- --limit 100 --force
-```
-
 Không cần chạy bước này mỗi lần mở app. Chỉ chạy khi:
 
 - lần đầu chuẩn bị dữ liệu AI;
 - import thêm truyện mới;
 - nội dung truyện thay đổi;
+- `--dry-run` báo có truyện stale/chưa index;
 - muốn index thêm batch;
 - đổi embedding model;
 - muốn re-index bằng `--force`.
@@ -297,7 +328,7 @@ http://localhost:3000/recommendations
 ### Chuẩn bị dữ liệu
 
 ```text
-StoryContent trong DB
+Story trong DB
   -> backend index-story-chunks script
   -> story-chunker chia nội dung thành chunk
   -> AI service /embed

@@ -4,7 +4,12 @@ import { parse } from 'csv-parse/sync';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import { copyStoryContentToStorage } from '../storage/story-content-storage';
+import { computeStoryContentHash, copyStoryContentToStorage } from '../storage/story-content-storage';
+
+type ContentStorageInfo = {
+  path: string;
+  hash: string;
+};
 
 type StoryCsvRow = {
   product_id: string;
@@ -37,6 +42,7 @@ export type ParsedStory = {
   coverUrl: string | null;
   discount: number | null;
   contentPath: string | null;
+  contentHash: string | null;
 };
 
 const DEFAULT_BOOKS_DIR = resolve(process.cwd(), '../data/raw/books');
@@ -44,7 +50,7 @@ const DEFAULT_STORIES_CSV = resolve(DEFAULT_BOOKS_DIR, 'prepared_data_book.csv')
 const DEFAULT_OUTPUT_DIR = resolve(DEFAULT_BOOKS_DIR, 'output');
 const DEFAULT_MATCH_REPORT_PATH = resolve(process.cwd(), '../data/processed/content-path-match-report.json');
 
-export function parseStoryRows(csv: string, contentPathsByProductId: Map<string, string>): ParsedStory[] {
+export function parseStoryRows(csv: string, contentByProductId: Map<string, ContentStorageInfo>): ParsedStory[] {
   const rows = parse(csv, { columns: true, skip_empty_lines: true, trim: true }) as StoryCsvRow[];
   const seenProductIds = new Set<number>();
   const stories: ParsedStory[] = [];
@@ -53,6 +59,8 @@ export function parseStoryRows(csv: string, contentPathsByProductId: Map<string,
     const productId = Number(row.product_id);
     if (seenProductIds.has(productId)) continue;
     seenProductIds.add(productId);
+
+    const content = contentByProductId.get(String(productId));
 
     stories.push({
       productId,
@@ -68,7 +76,8 @@ export function parseStoryRows(csv: string, contentPathsByProductId: Map<string,
       manufacturer: normalizeString(row.manufacturer),
       coverUrl: normalizeString(row.cover_link),
       discount: parseNullableNumber(row.discount),
-      contentPath: contentPathsByProductId.get(String(productId)) ?? null,
+      contentPath: content?.path ?? null,
+      contentHash: content?.hash ?? null,
     });
   }
 
@@ -85,16 +94,17 @@ export async function copyMatchedContentToStorage(
   outputDir: string,
   matches: ContentPathMatchReport['matched'],
   backendRoot = resolve(process.cwd()),
-): Promise<Map<string, string>> {
-  const contentPathsByProductId = new Map<string, string>();
+): Promise<Map<string, ContentStorageInfo>> {
+  const contentByProductId = new Map<string, ContentStorageInfo>();
 
   for (const match of matches) {
     const sourcePath = join(outputDir, match.fileName);
     const storedRelativePath = await copyStoryContentToStorage(sourcePath, match.productId, backendRoot);
-    contentPathsByProductId.set(String(match.productId), storedRelativePath);
+    const hash = await computeStoryContentHash(sourcePath);
+    contentByProductId.set(String(match.productId), { path: storedRelativePath, hash });
   }
 
-  return contentPathsByProductId;
+  return contentByProductId;
 }
 
 export async function buildContentPathsByProductId(
@@ -171,19 +181,30 @@ function removeEditionNoise(value: string): string {
 
 type ImportStoriesPrisma = Pick<PrismaClient, 'story' | '$transaction'>;
 
+type ExistingStoryContentState = {
+  contentPath: string | null;
+  contentHash: string | null;
+};
+
 export async function importStoriesFromCsv(
   prisma: ImportStoriesPrisma,
   csv: string,
-  contentPathsByProductId: Map<string, string>,
+  contentByProductId: Map<string, ContentStorageInfo>,
 ) {
-  const stories = parseStoryRows(csv, contentPathsByProductId);
+  const stories = parseStoryRows(csv, contentByProductId);
 
   for (const story of stories) {
+    const existing = await prisma.story.findUnique({
+      where: { productId: story.productId },
+      select: { contentPath: true, contentHash: true },
+    });
+    const contentUpdatedAt = shouldMarkContentUpdated(story, existing) ? new Date() : undefined;
+
     await prisma.$transaction(async (tx) => {
       await tx.story.upsert({
         where: { productId: story.productId },
-        create: toPrismaStoryCreateData(story),
-        update: toPrismaStoryUpdateData(story),
+        create: toPrismaStoryCreateData(story, contentUpdatedAt ?? (story.contentPath ? new Date() : undefined)),
+        update: toPrismaStoryUpdateData(story, contentUpdatedAt),
       });
     });
   }
@@ -191,14 +212,20 @@ export async function importStoriesFromCsv(
   return stories.length;
 }
 
-function toPrismaStoryCreateData(story: ParsedStory) {
+function shouldMarkContentUpdated(story: ParsedStory, existing: ExistingStoryContentState | null): boolean {
+  if (!story.contentPath || !story.contentHash) return false;
+  if (!existing) return true;
+  return existing.contentPath !== story.contentPath || existing.contentHash !== story.contentHash;
+}
+
+function toPrismaStoryCreateData(story: ParsedStory, contentUpdatedAt?: Date) {
   return {
     productId: story.productId,
-    ...toPrismaStoryUpdateData(story),
+    ...toPrismaStoryUpdateData(story, contentUpdatedAt),
   };
 }
 
-function toPrismaStoryUpdateData(story: ParsedStory) {
+function toPrismaStoryUpdateData(story: ParsedStory, contentUpdatedAt?: Date) {
   return {
     title: story.title,
     authors: story.authors,
@@ -213,7 +240,8 @@ function toPrismaStoryUpdateData(story: ParsedStory) {
     manufacturer: story.manufacturer,
     coverUrl: story.coverUrl,
     discount: story.discount,
-    contentPath: story.contentPath,
+    ...(story.contentPath && story.contentHash ? { contentPath: story.contentPath, contentHash: story.contentHash } : {}),
+    ...(contentUpdatedAt ? { contentUpdatedAt } : {}),
     category: {
       connectOrCreate: {
         where: { name: story.category },
