@@ -7,8 +7,8 @@ CREATE TABLE "finance_categories" (
     "color" TEXT,
     "isSystemCategory" BOOLEAN NOT NULL DEFAULT false,
     "displayOrder" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "finance_categories_pkey" PRIMARY KEY ("id")
 );
@@ -19,12 +19,12 @@ CREATE TABLE "finance_invoices" (
     "filename" TEXT NOT NULL,
     "filePath" TEXT NOT NULL,
     "storeName" TEXT,
-    "purchasedAt" TIMESTAMP(3),
-    "totalAmount" DOUBLE PRECISION,
+    "purchasedAt" TIMESTAMPTZ(3),
+    "totalAmount" NUMERIC(12,2),
     "extractedData" JSONB,
     "status" TEXT NOT NULL DEFAULT 'pending',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "finance_invoices_pkey" PRIMARY KEY ("id")
 );
@@ -36,13 +36,13 @@ CREATE TABLE "finance_expenses" (
     "categoryId" TEXT,
     "description" TEXT,
     "merchantName" TEXT,
-    "amount" DOUBLE PRECISION NOT NULL,
-    "spentAt" TIMESTAMP(3),
+    "amount" NUMERIC(12,2) NOT NULL,
+    "spentAt" TIMESTAMPTZ(3),
     "confirmedByUser" BOOLEAN NOT NULL DEFAULT false,
     "sourceType" TEXT NOT NULL DEFAULT 'manual',
     "sourceMetadata" JSONB,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "finance_expenses_pkey" PRIMARY KEY ("id")
 );
@@ -51,11 +51,11 @@ CREATE TABLE "finance_budgets" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
-    "limitAmount" DOUBLE PRECISION NOT NULL,
+    "limitAmount" NUMERIC(12,2) NOT NULL,
     "period" TEXT NOT NULL DEFAULT 'monthly',
     "alertThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0.8,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "finance_budgets_pkey" PRIMARY KEY ("id")
 );
@@ -65,8 +65,8 @@ CREATE TABLE "finance_chat_sessions" (
     "userId" TEXT NOT NULL,
     "sessionTitle" TEXT,
     "status" TEXT NOT NULL DEFAULT 'active',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "finance_chat_sessions_pkey" PRIMARY KEY ("id")
 );
@@ -77,7 +77,7 @@ CREATE TABLE "finance_chat_messages" (
     "role" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "metadata" JSONB,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "finance_chat_messages_pkey" PRIMARY KEY ("id")
 );
@@ -89,7 +89,7 @@ CREATE TABLE "finance_ai_interactions" (
     "inputData" JSONB NOT NULL,
     "aiResponse" JSONB NOT NULL,
     "userFeedback" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "finance_ai_interactions_pkey" PRIMARY KEY ("id")
 );
@@ -100,8 +100,8 @@ CREATE TABLE "finance_categorization_rules" (
     "storeNamePattern" TEXT NOT NULL,
     "suggestedCategoryId" TEXT NOT NULL,
     "usageCount" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(3) NOT NULL,
 
     CONSTRAINT "finance_categorization_rules_pkey" PRIMARY KEY ("id")
 );
@@ -113,7 +113,7 @@ CREATE TABLE "finance_categorization_feedback" (
     "suggestedCategoryId" TEXT,
     "confirmedCategoryId" TEXT NOT NULL,
     "feedbackType" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "finance_categorization_feedback_pkey" PRIMARY KEY ("id")
 );
@@ -126,6 +126,7 @@ CREATE INDEX "finance_expenses_categoryId_idx" ON "finance_expenses"("categoryId
 CREATE INDEX "finance_expenses_invoiceId_idx" ON "finance_expenses"("invoiceId");
 CREATE UNIQUE INDEX "finance_budgets_userId_categoryId_period_key" ON "finance_budgets"("userId", "categoryId", "period");
 CREATE INDEX "finance_budgets_userId_idx" ON "finance_budgets"("userId");
+CREATE INDEX "finance_budgets_categoryId_idx" ON "finance_budgets"("categoryId");
 CREATE INDEX "finance_chat_sessions_userId_createdAt_idx" ON "finance_chat_sessions"("userId", "createdAt");
 CREATE INDEX "finance_chat_messages_sessionId_createdAt_idx" ON "finance_chat_messages"("sessionId", "createdAt");
 CREATE INDEX "finance_ai_interactions_userId_createdAt_idx" ON "finance_ai_interactions"("userId", "createdAt");
@@ -133,6 +134,8 @@ CREATE UNIQUE INDEX "finance_categorization_rules_userId_storeNamePattern_key" O
 CREATE INDEX "finance_categorization_rules_suggestedCategoryId_idx" ON "finance_categorization_rules"("suggestedCategoryId");
 CREATE INDEX "finance_categorization_feedback_userId_idx" ON "finance_categorization_feedback"("userId");
 CREATE INDEX "finance_categorization_feedback_expenseId_idx" ON "finance_categorization_feedback"("expenseId");
+CREATE INDEX "finance_categorization_feedback_suggestedCategoryId_idx" ON "finance_categorization_feedback"("suggestedCategoryId");
+CREATE INDEX "finance_categorization_feedback_confirmedCategoryId_idx" ON "finance_categorization_feedback"("confirmedCategoryId");
 
 ALTER TABLE "finance_categories" ADD CONSTRAINT "finance_categories_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "finance_invoices" ADD CONSTRAINT "finance_invoices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

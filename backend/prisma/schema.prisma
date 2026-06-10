@@ -153,22 +153,22 @@ model UserReview {
 }
 
 model FinanceCategory {
-  id                   String                         @id @default(cuid())
-  userId               String
-  name                 String
-  description          String?
-  icon                 String?
-  color                String?
-  isSystemCategory     Boolean                        @default(false)
-  displayOrder         Int                            @default(0)
-  user                 User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses             FinanceExpense[]
-  budgets              FinanceBudget[]
+  id                    String                          @id @default(cuid())
+  userId                String
+  name                  String
+  description           String?
+  icon                  String?
+  color                 String?
+  isSystemCategory      Boolean                         @default(false)
+  displayOrder          Int                             @default(0)
+  user                  User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses              FinanceExpense[]
+  budgets               FinanceBudget[]
   categorizationRules   FinanceCategorizationRule[]
-  suggestedFeedbacks   FinanceCategorizationFeedback[] @relation("SuggestedFinanceCategory")
-  confirmedFeedbacks   FinanceCategorizationFeedback[] @relation("ConfirmedFinanceCategory")
-  createdAt            DateTime                       @default(now())
-  updatedAt            DateTime                       @updatedAt
+  suggestedFeedbacks    FinanceCategorizationFeedback[] @relation("SuggestedFinanceCategory")
+  confirmedFeedbacks    FinanceCategorizationFeedback[] @relation("ConfirmedFinanceCategory")
+  createdAt             DateTime                        @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                        @updatedAt @db.Timestamptz(3)
 
   @@unique([userId, name])
   @@index([userId])
@@ -176,19 +176,19 @@ model FinanceCategory {
 }
 
 model FinanceInvoice {
-  id           String           @id @default(cuid())
-  userId       String
-  filename     String
-  filePath     String
-  storeName    String?
-  purchasedAt  DateTime?
-  totalAmount  Float?
+  id            String           @id @default(cuid())
+  userId        String
+  filename      String
+  filePath      String
+  storeName     String?
+  purchasedAt   DateTime?        @db.Timestamptz(3)
+  totalAmount   Decimal?         @db.Decimal(12, 2)
   extractedData Json?
-  status       String           @default("pending")
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses     FinanceExpense[]
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  status        String           @default("pending")
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses      FinanceExpense[]
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
 
   @@index([userId])
   @@map("finance_invoices")
@@ -201,8 +201,8 @@ model FinanceExpense {
   categoryId              String?
   description             String?
   merchantName            String?
-  amount                  Float
-  spentAt                 DateTime?
+  amount                  Decimal                        @db.Decimal(12, 2)
+  spentAt                 DateTime?                      @db.Timestamptz(3)
   confirmedByUser         Boolean                        @default(false)
   sourceType              String                         @default("manual")
   sourceMetadata          Json?
@@ -210,8 +210,8 @@ model FinanceExpense {
   invoice                 FinanceInvoice?                @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   category                FinanceCategory?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categorizationFeedbacks FinanceCategorizationFeedback[]
-  createdAt               DateTime                       @default(now())
-  updatedAt               DateTime                       @updatedAt
+  createdAt               DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                       @updatedAt @db.Timestamptz(3)
 
   @@index([userId, spentAt])
   @@index([categoryId])
@@ -220,19 +220,20 @@ model FinanceExpense {
 }
 
 model FinanceBudget {
-  id            String          @id @default(cuid())
-  userId        String
-  categoryId    String
-  limitAmount   Float
-  period        String          @default("monthly")
+  id             String          @id @default(cuid())
+  userId         String
+  categoryId     String
+  limitAmount    Decimal         @db.Decimal(12, 2)
+  period         String          @default("monthly")
   alertThreshold Float           @default(0.8)
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category      FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
 
   @@unique([userId, categoryId, period])
   @@index([userId])
+  @@index([categoryId])
   @@map("finance_budgets")
 }
 
@@ -243,8 +244,8 @@ model FinanceChatSession {
   status       String               @default("active")
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages     FinanceChatMessage[]
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@map("finance_chat_sessions")
@@ -257,7 +258,7 @@ model FinanceChatMessage {
   content   String
   metadata  Json?
   session   FinanceChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  createdAt DateTime           @default(now())
+  createdAt DateTime           @default(now()) @db.Timestamptz(3)
 
   @@index([sessionId, createdAt])
   @@map("finance_chat_messages")
@@ -271,7 +272,7 @@ model FinanceAIInteraction {
   aiResponse      Json
   userFeedback    String?
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([userId, createdAt])
   @@map("finance_ai_interactions")
@@ -285,8 +286,8 @@ model FinanceCategorizationRule {
   usageCount          Int             @default(0)
   user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   suggestedCategory   FinanceCategory @relation(fields: [suggestedCategoryId], references: [id], onDelete: Cascade)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  createdAt           DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime        @updatedAt @db.Timestamptz(3)
 
   @@unique([userId, storeNamePattern])
   @@index([suggestedCategoryId])
@@ -304,9 +305,11 @@ model FinanceCategorizationFeedback {
   expense             FinanceExpense   @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   suggestedCategory   FinanceCategory? @relation("SuggestedFinanceCategory", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
   confirmedCategory   FinanceCategory  @relation("ConfirmedFinanceCategory", fields: [confirmedCategoryId], references: [id], onDelete: Cascade)
-  createdAt           DateTime         @default(now())
+  createdAt           DateTime         @default(now()) @db.Timestamptz(3)
 
   @@index([userId])
   @@index([expenseId])
+  @@index([suggestedCategoryId])
+  @@index([confirmedCategoryId])
   @@map("finance_categorization_feedback")
 }
