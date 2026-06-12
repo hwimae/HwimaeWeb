@@ -16,14 +16,15 @@ describe('parseStoryRows', () => {
       '101,Book A,Author A,100,90,12,Fiction,345,4.8,210,Publisher A,https://example.com/a.jpg,10',
     ].join('\n');
 
-    const contentPathsByProductId = new Map<string, string>([['101', 'storage/stories/101.txt']]);
+    const contentByProductId = new Map([['101', { path: 'storage/stories/101.txt', hash: 'hash-101' }]]);
 
-    const stories = parseStoryRows(csv, contentPathsByProductId);
+    const stories = parseStoryRows(csv, contentByProductId);
 
     expect(stories).toHaveLength(1);
     expect(stories[0]).toMatchObject({
       productId: 101,
       contentPath: 'storage/stories/101.txt',
+      contentHash: 'hash-101',
       reviewCount: 0,
       averageRating: 0,
     });
@@ -31,7 +32,7 @@ describe('parseStoryRows', () => {
 });
 
 describe('copyMatchedContentToStorage', () => {
-  it('copies matched files into storage/stories/<productId>.txt and returns relative paths map', async () => {
+  it('copies matched files into storage/stories/<productId>.txt and returns metadata map', async () => {
     const backendRoot = await mkdtemp(join(tmpdir(), 'import-books-copy-'));
     const outputDir = join(backendRoot, 'data', 'raw', 'books', 'output');
 
@@ -50,9 +51,9 @@ describe('copyMatchedContentToStorage', () => {
       );
 
       expect(result).toEqual(
-        new Map<string, string>([
-          ['11', 'storage/stories/11.txt'],
-          ['22', 'storage/stories/22.txt'],
+        new Map([
+          ['11', { path: 'storage/stories/11.txt', hash: 'c7ae2a3dd3c1a7f6225ac8cd8f1d8b78c8e19c7962dd603d450e12bbb8e9503b' }],
+          ['22', { path: 'storage/stories/22.txt', hash: '5d60ba742c480d86b7eb59f908da2316322a1a126cd3956adbff43f0caea0212' }],
         ]),
       );
 
@@ -65,7 +66,7 @@ describe('copyMatchedContentToStorage', () => {
 });
 
 describe('importStoriesFromCsv', () => {
-  it('upserts stories metadata only and does not access storyContent', async () => {
+  it('sets contentUpdatedAt when imported content hash is new', async () => {
     const csv = [
       'product_id,title,authors,original_price,current_price,quantity,category,n_review,avg_rating,pages,manufacturer,cover_link,discount',
       '501,Story X,Author X,200,150,10,Novel,999,4.9,300,Pub,https://example.com/x.jpg,25',
@@ -75,28 +76,118 @@ describe('importStoriesFromCsv', () => {
 
     const prismaMock = {
       story: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'story-501', productId: 501, contentPath: null, contentHash: null }),
         upsert: jest.fn(async (args) => {
           upsertCalls.push(args);
           return { id: 'story-501', productId: 501 };
         }),
       },
-      $transaction: jest.fn(async (callback) => callback({ story: { upsert: prismaMock.story.upsert } })),
+      $transaction: jest.fn(async (callback) => callback({ story: prismaMock.story })),
     } as any;
 
-    const count = await importStoriesFromCsv(prismaMock, csv, new Map([['501', 'storage/stories/501.txt']]));
+    const count = await importStoriesFromCsv(
+      prismaMock,
+      csv,
+      new Map([['501', { path: 'storage/stories/501.txt', hash: 'hash-501' }]]),
+    );
 
     expect(count).toBe(1);
+    expect(prismaMock.story.findUnique).toHaveBeenCalledWith({
+      where: { productId: 501 },
+      select: { contentPath: true, contentHash: true },
+    });
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     expect(prismaMock.story.upsert).toHaveBeenCalledTimes(1);
 
     const call = upsertCalls[0];
     expect(call.where).toEqual({ productId: 501 });
     expect(call.create.contentPath).toBe('storage/stories/501.txt');
+    expect(call.create.contentHash).toBe('hash-501');
+    expect(call.create.contentUpdatedAt).toBeInstanceOf(Date);
     expect(call.update.contentPath).toBe('storage/stories/501.txt');
+    expect(call.update.contentHash).toBe('hash-501');
+    expect(call.update.contentUpdatedAt).toBeInstanceOf(Date);
+    expect(call.update.contentIndexedAt).toBeUndefined();
     expect(call.update.averageRating).toBe(0);
     expect(call.update.reviewCount).toBe(0);
     expect(call.update.externalAverageRating).toBe(0);
     expect(call.update.externalReviewCount).toBe(0);
+
+    const serializedCall = JSON.stringify(call);
+    expect(serializedCall).not.toContain('storyContent');
+  });
+
+  it('does not bump contentUpdatedAt when imported content hash is unchanged', async () => {
+    const csv = [
+      'product_id,title,authors,original_price,current_price,quantity,category,n_review,avg_rating,pages,manufacturer,cover_link,discount',
+      '501,Story X,Author X,200,150,10,Novel,999,4.9,300,Pub,https://example.com/x.jpg,25',
+    ].join('\n');
+
+    const upsertCalls: any[] = [];
+
+    const prismaMock = {
+      story: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'story-501',
+          productId: 501,
+          contentPath: 'storage/stories/501.txt',
+          contentHash: 'hash-501',
+        }),
+        upsert: jest.fn(async (args) => {
+          upsertCalls.push(args);
+          return { id: 'story-501', productId: 501 };
+        }),
+      },
+      $transaction: jest.fn(async (callback) => callback({ story: prismaMock.story })),
+    } as any;
+
+    await importStoriesFromCsv(
+      prismaMock,
+      csv,
+      new Map([['501', { path: 'storage/stories/501.txt', hash: 'hash-501' }]]),
+    );
+
+    expect(upsertCalls[0].update.contentHash).toBe('hash-501');
+    expect(upsertCalls[0].update.contentUpdatedAt).toBeUndefined();
+    expect(upsertCalls[0].update.contentIndexedAt).toBeUndefined();
+
+    const serializedCall = JSON.stringify(upsertCalls[0]);
+    expect(serializedCall).not.toContain('storyContent');
+  });
+
+  it('preserves existing content metadata when imported content is missing', async () => {
+    const csv = [
+      'product_id,title,authors,original_price,current_price,quantity,category,n_review,avg_rating,pages,manufacturer,cover_link,discount',
+      '501,Story X,Author X,200,150,10,Novel,999,4.9,300,Pub,https://example.com/x.jpg,25',
+    ].join('\n');
+
+    const upsertCalls: any[] = [];
+
+    const prismaMock = {
+      story: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'story-501',
+          productId: 501,
+          contentPath: 'storage/stories/501.txt',
+          contentHash: 'hash-501',
+        }),
+        upsert: jest.fn(async (args) => {
+          upsertCalls.push(args);
+          return { id: 'story-501', productId: 501 };
+        }),
+      },
+      $transaction: jest.fn(async (callback) => callback({ story: prismaMock.story })),
+    } as any;
+
+    await importStoriesFromCsv(prismaMock, csv, new Map());
+
+    const call = upsertCalls[0];
+    expect(call.update.contentPath).toBeUndefined();
+    expect(call.update.contentHash).toBeUndefined();
+    expect(call.update).not.toHaveProperty('contentPath');
+    expect(call.update).not.toHaveProperty('contentHash');
+    expect(call.update.contentUpdatedAt).toBeUndefined();
+    expect(call.update.contentIndexedAt).toBeUndefined();
 
     const serializedCall = JSON.stringify(call);
     expect(serializedCall).not.toContain('storyContent');

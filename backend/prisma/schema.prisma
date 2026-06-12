@@ -12,11 +12,70 @@ model User {
   email        String       @unique
   passwordHash String
   name         String
+  ratings      Rating[]
   userReviews  UserReview[]
+  financeCategories              FinanceCategory[]
+  financeExpenses                FinanceExpense[]
+  financeBudgets                 FinanceBudget[]
+  financeInvoices                FinanceInvoice[]
+  financeChatSessions            FinanceChatSession[]
+  financeAIInteractions          FinanceAIInteraction[]
+  financeCategorizationRules     FinanceCategorizationRule[]
+  financeCategorizationFeedbacks FinanceCategorizationFeedback[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   @@map("users")
+}
+
+model Movie {
+  id            String       @id @default(cuid())
+  movielensId   Int          @unique
+  title         String
+  releaseYear   Int?
+  overview      String?
+  posterUrl     String?
+  averageRating Float        @default(0)
+  ratingCount   Int          @default(0)
+  movieGenres   MovieGenre[]
+  ratings       Rating[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("movies")
+}
+
+model Genre {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  movieGenres MovieGenre[]
+
+  @@map("genres")
+}
+
+model MovieGenre {
+  movieId String
+  genreId String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, genreId])
+  @@index([genreId])
+  @@map("movie_genres")
+}
+
+model Rating {
+  id      String   @id @default(cuid())
+  userId  String
+  movieId String
+  rating  Float
+  ratedAt DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie   Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([movieId])
+  @@map("ratings")
 }
 
 model Story {
@@ -40,12 +99,16 @@ model Story {
   coverUrl              String?
   discount              Float?
   contentPath           String?
+  contentHash           String?
+  contentUpdatedAt      DateTime?
+  contentIndexedAt      DateTime?
   chunks                StoryChunk[]
   userReviews           UserReview[]
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
   @@index([categoryId])
+  @@index([contentPath, contentUpdatedAt, contentIndexedAt], map: "stories_content_index_state_idx")
   @@map("stories")
 }
 
@@ -58,13 +121,13 @@ model Category {
 }
 
 model StoryChunk {
-  id         String                 @id @default(cuid())
+  id         String                     @id @default(cuid())
   storyId    String
   chunkIndex Int
   content    String
   embedding  Unsupported("vector(384)")
-  story      Story                  @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  createdAt  DateTime               @default(now())
+  story      Story                      @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime                   @default(now())
 
   @@unique([storyId, chunkIndex])
   @@index([storyId])
@@ -87,4 +150,166 @@ model UserReview {
   @@unique([userId, storyId])
   @@index([storyId])
   @@map("user_reviews")
+}
+
+model FinanceCategory {
+  id                    String                          @id @default(cuid())
+  userId                String
+  name                  String
+  description           String?
+  icon                  String?
+  color                 String?
+  isSystemCategory      Boolean                         @default(false)
+  displayOrder          Int                             @default(0)
+  user                  User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses              FinanceExpense[]
+  budgets               FinanceBudget[]
+  categorizationRules   FinanceCategorizationRule[]
+  suggestedFeedbacks    FinanceCategorizationFeedback[] @relation("SuggestedFinanceCategory")
+  confirmedFeedbacks    FinanceCategorizationFeedback[] @relation("ConfirmedFinanceCategory")
+  createdAt             DateTime                        @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                        @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("finance_categories")
+}
+
+model FinanceInvoice {
+  id            String           @id @default(cuid())
+  userId        String
+  filename      String
+  filePath      String
+  storeName     String?
+  purchasedAt   DateTime?        @db.Timestamptz(3)
+  totalAmount   Decimal?         @db.Decimal(12, 2)
+  extractedData Json?
+  status        String           @default("pending")
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses      FinanceExpense[]
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("finance_invoices")
+}
+
+model FinanceExpense {
+  id                      String                         @id @default(cuid())
+  userId                  String
+  invoiceId               String?
+  categoryId              String?
+  description             String?
+  merchantName            String?
+  amount                  Decimal                        @db.Decimal(12, 2)
+  spentAt                 DateTime?                      @db.Timestamptz(3)
+  confirmedByUser         Boolean                        @default(false)
+  sourceType              String                         @default("manual")
+  sourceMetadata          Json?
+  user                    User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoice                 FinanceInvoice?                @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  category                FinanceCategory?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categorizationFeedbacks FinanceCategorizationFeedback[]
+  createdAt               DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                       @updatedAt @db.Timestamptz(3)
+
+  @@index([userId, spentAt])
+  @@index([categoryId])
+  @@index([invoiceId])
+  @@map("finance_expenses")
+}
+
+model FinanceBudget {
+  id             String          @id @default(cuid())
+  userId         String
+  categoryId     String
+  limitAmount    Decimal         @db.Decimal(12, 2)
+  period         String          @default("monthly")
+  alertThreshold Float           @default(0.8)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       FinanceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, categoryId, period])
+  @@index([userId])
+  @@index([categoryId])
+  @@map("finance_budgets")
+}
+
+model FinanceChatSession {
+  id           String               @id @default(cuid())
+  userId       String
+  sessionTitle String?
+  status       String               @default("active")
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     FinanceChatMessage[]
+  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@map("finance_chat_sessions")
+}
+
+model FinanceChatMessage {
+  id        String             @id @default(cuid())
+  sessionId String
+  role      String
+  content   String
+  metadata  Json?
+  session   FinanceChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@index([sessionId, createdAt])
+  @@map("finance_chat_messages")
+}
+
+model FinanceAIInteraction {
+  id              String   @id @default(cuid())
+  userId          String
+  interactionType String
+  inputData       Json
+  aiResponse      Json
+  userFeedback    String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@map("finance_ai_interactions")
+}
+
+model FinanceCategorizationRule {
+  id                  String          @id @default(cuid())
+  userId              String
+  storeNamePattern    String
+  suggestedCategoryId String
+  usageCount          Int             @default(0)
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestedCategory   FinanceCategory @relation(fields: [suggestedCategoryId], references: [id], onDelete: Cascade)
+  createdAt           DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, storeNamePattern])
+  @@index([suggestedCategoryId])
+  @@map("finance_categorization_rules")
+}
+
+model FinanceCategorizationFeedback {
+  id                  String           @id @default(cuid())
+  userId              String
+  expenseId           String
+  suggestedCategoryId String?
+  confirmedCategoryId String
+  feedbackType        String
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expense             FinanceExpense   @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  suggestedCategory   FinanceCategory? @relation("SuggestedFinanceCategory", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
+  confirmedCategory   FinanceCategory  @relation("ConfirmedFinanceCategory", fields: [confirmedCategoryId], references: [id], onDelete: Cascade)
+  createdAt           DateTime         @default(now()) @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expenseId])
+  @@index([suggestedCategoryId])
+  @@index([confirmedCategoryId])
+  @@map("finance_categorization_feedback")
 }

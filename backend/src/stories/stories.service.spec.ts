@@ -52,6 +52,22 @@ describe('stories.service', () => {
     expect(result.items[1]).not.toHaveProperty('contentPath');
   });
 
+  it('getStoryById does not expose contentPath and derives hasContent', async () => {
+    const findUnique = jest.fn().mockResolvedValue({ ...baseStory, contentPath: 'storage/stories/1.txt' });
+    const prisma = {
+      story: { findMany: jest.fn(), count: jest.fn(), findUnique },
+      $transaction: jest.fn(),
+    };
+
+    const service = createStoriesService({ prisma } as never);
+
+    const result = await service.getStoryById('story-1');
+
+    expect(findUnique).toHaveBeenCalledWith({ where: { id: 'story-1' }, include: { category: true } });
+    expect(result.hasContent).toBe(true);
+    expect(result).not.toHaveProperty('contentPath');
+  });
+
   it('listStories applies hasContent=true filter with contentPath not null', async () => {
     const findMany = jest.fn().mockResolvedValue([]);
     const count = jest.fn().mockResolvedValue(0);

@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { AppConfig } from './config';
+import { createFinanceAiClient, type FinanceAiClient } from './finance/ai-client';
 import { createAiClient, type AiClient } from './recommendations/ai-client';
 import { prisma } from './prisma';
 
@@ -29,6 +30,7 @@ export type BackendDeps = {
   passwordHasher: PasswordHasher;
   tokenService: TokenService;
   aiClient: AiClient;
+  financeAiClient: FinanceAiClient;
   logger: Logger;
 };
 
@@ -49,6 +51,7 @@ export function createBackendDeps(config: AppConfig): BackendDeps {
         jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as AccessTokenPayload,
     },
     aiClient: createAiClient(config.aiServiceUrl),
+    financeAiClient: createFinanceAiClient(config.aiServiceUrl),
     logger: console,
   };
 }

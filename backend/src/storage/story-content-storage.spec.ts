@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   buildStoredStoryContentPath,
+  computeStoryContentHash,
   copyStoryContentToStorage,
   readStoryContentFromStorage,
   resolveStoryContentPath,
@@ -45,9 +46,20 @@ describe('story-content-storage', () => {
     await expect(readStoryContentFromStorage('storage/stories/missing.txt', backendRoot)).resolves.toBeNull();
   });
 
-  it('rejects absolute paths and paths outside storage', () => {
+  it('rejects absolute paths and paths outside storage/stories', () => {
     expect(() => resolveStoryContentPath('/tmp/story.txt', backendRoot)).toThrow('Story content path must be relative');
-    expect(() => resolveStoryContentPath('../outside.txt', backendRoot)).toThrow('Story content path must stay inside storage');
-    expect(() => resolveStoryContentPath('data/raw/books/output/story.txt', backendRoot)).toThrow('Story content path must stay inside storage');
+    expect(() => resolveStoryContentPath('../outside.txt', backendRoot)).toThrow('Story content path must stay inside storage/stories');
+    expect(() => resolveStoryContentPath('storage/../.env', backendRoot)).toThrow('Story content path must stay inside storage/stories');
+    expect(() => resolveStoryContentPath('storage/other.txt', backendRoot)).toThrow('Story content path must stay inside storage/stories');
+    expect(() => resolveStoryContentPath('data/raw/books/output/story.txt', backendRoot)).toThrow('Story content path must stay inside storage/stories');
+  });
+
+  it('computes stable sha256 content hashes', async () => {
+    const source = join(backendRoot, 'source.txt');
+    await writeFile(source, 'Nội dung truyện', 'utf8');
+
+    await expect(computeStoryContentHash(source)).resolves.toBe(
+      '900555d7e2bcf573f374e2d494c08266d86fef10cedf0b6d105e8ef75e2589d0',
+    );
   });
 });

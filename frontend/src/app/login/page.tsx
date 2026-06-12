@@ -3,8 +3,12 @@
 import { FormEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { FormField } from "@/components/ui/form-field";
+import { PageShell } from "@/components/ui/page-shell";
+import { StatusMessage } from "@/components/ui/status-message";
 import { apiPost } from "@/lib/api";
 import { parseAuthResponse, saveAccessToken } from "@/lib/auth";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,7 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const errorRegionRef = useRef<HTMLParagraphElement>(null);
+  const errorRegionRef = useRef<HTMLDivElement>(null);
   const errorRegionId = "login-form-error";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -29,7 +33,7 @@ export default function LoginPage() {
       );
 
       saveAccessToken(response.accessToken);
-      router.push("/");
+      router.push("/stories");
     } catch {
       setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
       requestAnimationFrame(() => {
@@ -41,52 +45,51 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Đăng nhập</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
+    <PageShell
+      title="Đăng nhập"
+      description="Đăng nhập để viết review, nhận gợi ý và dùng tính năng tài chính."
+    >
+      <form onSubmit={handleSubmit} className="card">
+        <div className="section-stack">
+          <FormField
             id="email"
             name="email"
             type="email"
+            label="Email"
             autoComplete="email"
             required
             aria-describedby={error ? errorRegionId : undefined}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-        </div>
 
-        <div>
-          <label htmlFor="password">Mật khẩu</label>
-          <input
+          <FormField
             id="password"
             name="password"
             type="password"
+            label="Mật khẩu"
             autoComplete="current-password"
             required
             aria-describedby={error ? errorRegionId : undefined}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
+
+          <div
+            id={errorRegionId}
+            ref={errorRegionRef}
+            aria-live="assertive"
+            aria-atomic="true"
+            tabIndex={-1}
+          >
+            {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+          </div>
+
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
         </div>
-
-        <p
-          id={errorRegionId}
-          ref={errorRegionRef}
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
-          tabIndex={-1}
-        >
-          {error ?? ""}
-        </p>
-
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
-        </button>
       </form>
-    </main>
+    </PageShell>
   );
 }

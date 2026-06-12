@@ -1,6 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 type Parser<T> = (input: unknown) => T;
+
+type ApiRequestOptions = {
+  signal?: AbortSignal;
+};
 
 function parseWithOptionalParser<T>(input: unknown, parser?: Parser<T>): T {
   return parser ? parser(input) : (input as T);
@@ -10,6 +14,7 @@ export async function apiGet<T>(
   path: string,
   token?: string,
   parser?: Parser<T>,
+  options: ApiRequestOptions = {},
 ): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method: "GET",
@@ -17,6 +22,7 @@ export async function apiGet<T>(
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     cache: "no-store",
+    signal: options.signal,
   });
 
   if (!response.ok) {
@@ -32,6 +38,7 @@ export async function apiPost<T>(
   body: unknown,
   token?: string,
   parser?: Parser<T>,
+  options: ApiRequestOptions = {},
 ): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
@@ -40,6 +47,7 @@ export async function apiPost<T>(
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
+    signal: options.signal,
   });
 
   if (!response.ok) {

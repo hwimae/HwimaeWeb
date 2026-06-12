@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, normalize, resolve, sep } from 'node:path';
 
@@ -16,17 +17,22 @@ export function resolveStoryContentPath(
   }
 
   const normalizedRelativePath = normalize(relativePath);
-  const storageRoot = resolve(backendRoot, 'storage');
+  const storyStorageRoot = resolve(backendRoot, 'storage', 'stories');
   const absolutePath = resolve(backendRoot, normalizedRelativePath);
 
-  const insideStorage =
-    absolutePath === storageRoot || absolutePath.startsWith(`${storageRoot}${sep}`);
+  const insideStoryStorage =
+    absolutePath === storyStorageRoot || absolutePath.startsWith(`${storyStorageRoot}${sep}`);
 
-  if (!insideStorage) {
-    throw new Error('Story content path must stay inside storage');
+  if (!insideStoryStorage) {
+    throw new Error('Story content path must stay inside storage/stories');
   }
 
   return absolutePath;
+}
+
+export async function computeStoryContentHash(path: string): Promise<string> {
+  const content = await readFile(path);
+  return createHash('sha256').update(content).digest('hex');
 }
 
 export async function copyStoryContentToStorage(

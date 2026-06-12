@@ -92,6 +92,14 @@ describe('askStoryAdvisor', () => {
     expect(result.recommendations).toHaveLength(2);
     expect(result.recommendations[0].storyId).toBe('story-1');
     expect(result.recommendations[0].reason).toContain('Nội dung gần với yêu cầu');
+
+    const sql = (prisma.$queryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join('?');
+    expect(sql).toContain('s."contentPath" IS NOT NULL');
+    expect(sql).toContain('s."contentIndexedAt" IS NOT NULL');
+    expect(sql).toContain('s."contentUpdatedAt" IS NOT NULL');
+    expect(sql).toContain('s."contentIndexedAt" >= s."contentUpdatedAt"');
+    expect(sql).not.toContain('s."contentUpdatedAt" IS NULL');
+
     expect(aiClient.generateAdvisorAnswer).toHaveBeenCalledWith({
       query: 'main yếu thành mạnh',
       contexts: expect.arrayContaining([
