@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 
 from app.llm import LlmConfigurationError, extract_gemini_text
-from app.main import app, get_embedder, get_llm_client
+from app.main import app
+from app.modules.story.router import get_embedder_dependency, get_llm_client_dependency
 
 
 class FakeEmbedder:
@@ -30,7 +31,7 @@ def test_healthcheck_returns_ok():
 
 
 def test_embed_returns_vector():
-    app.dependency_overrides[get_embedder] = lambda: FakeEmbedder()
+    app.dependency_overrides[get_embedder_dependency] = lambda: FakeEmbedder()
     try:
         client = TestClient(app)
 
@@ -43,7 +44,7 @@ def test_embed_returns_vector():
 
 
 def test_answer_returns_llm_text():
-    app.dependency_overrides[get_llm_client] = lambda: FakeLlmClient()
+    app.dependency_overrides[get_llm_client_dependency] = lambda: FakeLlmClient()
     try:
         client = TestClient(app)
 
@@ -72,7 +73,7 @@ def test_answer_returns_llm_text():
 
 
 def test_answer_returns_service_unavailable_when_gemini_key_is_missing():
-    app.dependency_overrides[get_llm_client] = lambda: MissingKeyLlmClient()
+    app.dependency_overrides[get_llm_client_dependency] = lambda: MissingKeyLlmClient()
     try:
         client = TestClient(app)
 

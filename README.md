@@ -33,13 +33,37 @@ Tài liệu setup AI chi tiết nằm ở:
 docs/AI_STORY_ADVISOR_SETUP.md
 ```
 
+## AI module layout
+
+AI service được chia theo domain sản phẩm:
+
+- `ai/app/modules/story` — embedding truyện và sinh câu trả lời gợi ý truyện.
+- `ai/app/modules/finance` — trích chi tiêu, tư vấn, chat tài chính và OCR hóa đơn.
+- `ai/app/modules/movie` — module boundary dự phòng; chưa triển khai recommendation phim.
+
+Các route legacy như `/embed`, `/answer`, `/expense/extract-text`, `/chat/respond`, `/advice/generate`, và `/invoice/extract-image` vẫn được giữ để backend tương thích.
+
+## Frontend UI policy
+
+Frontend hiện tạm dùng UI mặc định theo hướng Next.js: semantic HTML, React/Next components, `next/link`, và CSS trong project. Thư mục `frontend/src/components/ui/` là nền ban đầu để sau này mở rộng thành bộ UI dùng chung cho toàn bộ dự án; không coi các dependency UI hiện có là bị cấm vĩnh viễn.
+
+## Frontend route layout
+
+Header chung của toàn bộ app chỉ có 3 khu vực cấp cao:
+
+- **Tài chính** (`/finance`) — bên trong có các tab con `Dashboard`, `AI`, `Chi tiêu`, `Ngân sách`.
+- **Truyện** (`/stories`) — giữ các chức năng truyện hiện có, gồm danh sách truyện, chi tiết truyện, review, AI tư vấn truyện, đăng nhập và đăng ký.
+- **Phim** (`/movie`) — hiện là route placeholder để mở rộng sau.
+
+Các chức năng con không đưa lên header cấp cao; chúng nằm trong nội dung hoặc navigation riêng của từng khu vực.
+
 ## Yêu cầu môi trường
 
 - Node.js 20+
 - pnpm 9+
 - Python 3.10 khuyến nghị cho AI service
 - PostgreSQL local có extension `pgvector`
-- Gemini API key
+- Gemini API key nếu muốn gọi Gemini thật cho endpoint sinh câu trả lời truyện; finance endpoints có fallback deterministic khi chưa cấu hình key.
 
 ## Biến môi trường
 
@@ -54,8 +78,8 @@ backend/.env
 Nội dung mẫu:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/story_recommendation?schema=public"
-JWT_SECRET="some-long-random-secret"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/story_recommendation?schema=public"
+JWT_SECRET="replace-with-a-long-random-secret"
 PORT=4000
 FRONTEND_URL="http://localhost:3000"
 AI_SERVICE_URL="http://localhost:8000"
@@ -80,15 +104,15 @@ ai/.env
 Nội dung mẫu:
 
 ```env
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta
-GEMINI_MODEL=gemini-2.5-flash
-EMBEDDING_MODEL=intfloat/multilingual-e5-small
+GEMINI_API_KEY=
+GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta"
+GEMINI_MODEL="gemini-2.5-flash"
+EMBEDDING_MODEL="intfloat/multilingual-e5-small"
 ```
 
 | Biến | Bắt buộc | Ghi chú |
 |---|---:|---|
-| `GEMINI_API_KEY` | Có | API key để AI service gọi Gemini. Không commit key thật. |
+| `GEMINI_API_KEY` | Không | API key để AI service gọi Gemini thật cho `/answer`; finance có fallback deterministic khi chưa có key. Không commit key thật. |
 | `GEMINI_API_URL` | Không | Giữ mặc định nếu dùng Gemini API public. |
 | `GEMINI_MODEL` | Không | Model mặc định hiện dùng `gemini-2.5-flash`. |
 | `EMBEDDING_MODEL` | Không | Model embedding local mặc định `intfloat/multilingual-e5-small`. |
@@ -462,5 +486,6 @@ pnpm --dir frontend lint
 
 - Backend/frontend nền tảng đã có auth, stories, reviews và recommendation routes.
 - AI service FastAPI đã hoạt động với local embedding + Gemini answer.
-- Frontend có trang `/recommendations` cho AI tư vấn truyện.
+- Frontend có header chung cho 3 khu vực: Tài chính, Truyện và Phim.
+- Frontend có trang `/recommendations` cho AI tư vấn truyện trong khu Truyện.
 - Semantic recommendation chỉ dùng các truyện đã được index vào bảng `story_chunks`.

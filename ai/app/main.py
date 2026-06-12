@@ -1,11 +1,13 @@
 from functools import lru_cache
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI
 
 from app.config import get_settings
 from app.embedding import Embedder
-from app.llm import LlmClient, LlmClientError, LlmConfigurationError
-from app.schemas import AnswerRequest, AnswerResponse, EmbedRequest, EmbedResponse
+from app.finance import advice_router, chat_router, expense_router, finance_router, invoice_router
+from app.llm import LlmClient
+from app.modules.movie.router import movie_router
+from app.modules.story.router import configure_dependencies, legacy_router, story_router
 
 app = FastAPI(title="Story Recommendation AI Service")
 
@@ -35,17 +37,13 @@ def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/embed", response_model=EmbedResponse)
-def embed_text(request: EmbedRequest, embedder: Embedder = Depends(get_embedder)) -> EmbedResponse:
-    return EmbedResponse(embedding=embedder.embed(request.text))
+configure_dependencies(get_embedder, get_llm_client)
 
-
-@app.post("/answer", response_model=AnswerResponse)
-def answer(request: AnswerRequest, llm_client: LlmClient = Depends(get_llm_client)) -> AnswerResponse:
-    contexts = [context.model_dump() for context in request.contexts]
-    try:
-        return AnswerResponse(answer=llm_client.generate_answer(request.query, contexts))
-    except LlmConfigurationError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
-    except LlmClientError as error:
-        raise HTTPException(status_code=502, detail=str(error)) from error
+app.include_router(legacy_router)
+app.include_router(story_router)
+app.include_router(movie_router)
+app.include_router(finance_router)
+app.include_router(expense_router)
+app.include_router(invoice_router)
+app.include_router(advice_router)
+app.include_router(chat_router)

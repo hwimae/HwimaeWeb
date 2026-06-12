@@ -12,6 +12,7 @@ export class HttpError extends Error {
 }
 
 export const badRequest = (message: string): HttpError => new HttpError(400, message);
+export const validationError = (message: string): HttpError => new HttpError(400, message);
 export const unauthorized = (message: string): HttpError => new HttpError(401, message);
 export const notFound = (message: string): HttpError => new HttpError(404, message);
 export const conflict = (message: string): HttpError => new HttpError(409, message);

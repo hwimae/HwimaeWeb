@@ -2,6 +2,8 @@
 
 import { FormEvent, useId, useRef, useState } from "react";
 
+import { FormField } from "@/components/ui/form-field";
+import { StatusMessage } from "@/components/ui/status-message";
 import { apiPost } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
 
@@ -18,8 +20,10 @@ export function ReviewForm({ storyId }: ReviewFormProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const statusRef = useRef<HTMLParagraphElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
   const statusId = useId();
+  const titleId = useId();
+  const contentId = useId();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,65 +52,66 @@ export function ReviewForm({ storyId }: ReviewFormProps) {
   }
 
   return (
-    <section aria-labelledby="review-title">
+    <section aria-labelledby="review-title" className="section-stack">
       <h2 id="review-title">Viết review truyện</h2>
-      <form onSubmit={handleSubmit}>
-        <fieldset disabled={isSubmitting}>
-          <legend>Điểm đánh giá</legend>
-          <div role="radiogroup" aria-label="Chọn số sao từ 1 đến 5">
-            {STAR_VALUES.map((star) => (
-              <label key={star} style={{ marginRight: "0.75rem" }}>
-                <input
-                  type="radio"
-                  name="rating"
-                  value={star}
-                  checked={rating === star}
-                  onChange={() => setRating(star)}
-                />{" "}
-                {star} sao
-              </label>
-            ))}
-          </div>
-        </fieldset>
+      <form onSubmit={handleSubmit} className="card">
+        <div className="section-stack">
+          <fieldset disabled={isSubmitting} className="section-stack">
+            <legend>Điểm đánh giá</legend>
+            <div role="radiogroup" aria-label="Chọn số sao từ 1 đến 5" className="section-stack">
+              {STAR_VALUES.map((star) => (
+                <label key={star}>
+                  <input
+                    type="radio"
+                    name="rating"
+                    value={star}
+                    checked={rating === star}
+                    onChange={() => setRating(star)}
+                  />{" "}
+                  {star} sao
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
-        <label style={{ display: "block", marginTop: "0.75rem" }}>
-          Tiêu đề review
-          <input
+          <FormField
+            id={titleId}
+            label="Tiêu đề review"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
             maxLength={200}
-            style={{ display: "block", width: "100%" }}
+            aria-describedby={(error ?? message) ? statusId : undefined}
           />
-        </label>
 
-        <label style={{ display: "block", marginTop: "0.75rem" }}>
-          Nội dung review
-          <textarea
+          <FormField
+            id={contentId}
+            kind="textarea"
+            label="Nội dung review"
             value={content}
             onChange={(event) => setContent(event.target.value)}
             required
             maxLength={5000}
             rows={5}
-            style={{ display: "block", width: "100%" }}
+            aria-describedby={(error ?? message) ? statusId : undefined}
           />
-        </label>
 
-        <button type="submit" disabled={isSubmitting} style={{ marginTop: "0.75rem" }}>
-          {isSubmitting ? "Đang gửi..." : "Gửi review"}
-        </button>
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Đang gửi..." : "Gửi review"}
+          </button>
+
+          <div
+            id={statusId}
+            ref={statusRef}
+            aria-live="assertive"
+            aria-atomic="true"
+            tabIndex={-1}
+          >
+            {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+            {!error && message ? <StatusMessage tone="success">{message}</StatusMessage> : null}
+          </div>
+        </div>
       </form>
-
-      <p
-        id={statusId}
-        ref={statusRef}
-        role={error ? "alert" : "status"}
-        aria-live="assertive"
-        aria-atomic="true"
-        tabIndex={-1}
-      >
-        {error ?? message ?? ""}
-      </p>
     </section>
   );
 }

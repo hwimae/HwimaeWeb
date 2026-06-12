@@ -53,19 +53,18 @@ export function StoryListControls({ query, hasContent }: StoryListControlsProps)
   }, [hasContent, pathname, searchParams]);
 
   return (
-    <div className="story-list-controls">
-      <label className="search-label">
-        <span>Tìm kiếm truyện</span>
+    <div className="card section-stack">
+      <div className="form-field">
+        <label htmlFor="story-search">Tìm kiếm truyện</label>
         <input
+          id="story-search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Nhập tên truyện, tác giả hoặc thể loại..."
-          className="search-input"
         />
-      </label>
-      <Link href={hasContentHref} className="content-filter">
-        <span className={hasContent ? "checkbox checkbox-active" : "checkbox"}>{hasContent ? "✓" : ""}</span>
-        Chỉ hiện truyện có nội dung đọc
+      </div>
+      <Link href={hasContentHref}>
+        {hasContent ? "Bỏ lọc truyện có nội dung đọc" : "Chỉ hiện truyện có nội dung đọc"}
       </Link>
     </div>
   );
