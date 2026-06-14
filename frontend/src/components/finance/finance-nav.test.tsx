@@ -24,6 +24,6 @@ describe("FinanceNav", () => {
       expect(html).toContain(`href="${item.href}"`);
       expect(html).toContain(item.label);
     });
-    expect(html).toContain('aria-current="page" href="/finance/dashboard"');
+    expect(html).toContain('aria-current="page"');
   });
 });

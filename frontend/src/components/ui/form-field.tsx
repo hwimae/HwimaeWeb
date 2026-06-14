@@ -1,55 +1,55 @@
-import React, {
-  type InputHTMLAttributes,
-  type TextareaHTMLAttributes,
-} from "react";
+import { Input, Textarea } from "@heroui/react";
+import React, { type ComponentProps } from "react";
 
 type BaseFormFieldProps = {
   id: string;
   label: string;
   hint?: string;
-  kind?: "input" | "textarea";
 };
 
+type HeroInputProps = ComponentProps<typeof Input>;
+type HeroTextareaProps = ComponentProps<typeof Textarea>;
+
 type InputFormFieldProps = BaseFormFieldProps &
-  Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
+  Omit<HeroInputProps, "id" | "label" | "description"> & {
     kind?: "input";
   };
 
 type TextareaFormFieldProps = BaseFormFieldProps &
-  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "id"> & {
+  Omit<HeroTextareaProps, "id" | "label" | "description"> & {
     kind: "textarea";
   };
 
 type FormFieldProps = InputFormFieldProps | TextareaFormFieldProps;
 
 export function FormField(props: FormFieldProps) {
-  const { id, label, hint, kind = "input", ...fieldProps } = props;
-  const hintId = hint ? `${id}-hint` : undefined;
-  const ariaDescribedBy = [fieldProps["aria-describedby"], hintId]
-    .filter(Boolean)
-    .join(" ");
+  if (props.kind === "textarea") {
+    const { id, label, hint, kind: _kind, ...fieldProps } = props;
+
+    return (
+      <Textarea
+        {...fieldProps}
+        id={id}
+        label={label}
+        description={hint}
+        variant="bordered"
+        color="primary"
+        className="form-field"
+      />
+    );
+  }
+
+  const { id, label, hint, kind: _kind, ...fieldProps } = props;
 
   return (
-    <div className="form-field">
-      <label htmlFor={id}>{label}</label>
-      {kind === "textarea" ? (
-        <textarea
-          {...(fieldProps as TextareaHTMLAttributes<HTMLTextAreaElement>)}
-          id={id}
-          aria-describedby={ariaDescribedBy || undefined}
-        />
-      ) : (
-        <input
-          {...(fieldProps as InputHTMLAttributes<HTMLInputElement>)}
-          id={id}
-          aria-describedby={ariaDescribedBy || undefined}
-        />
-      )}
-      {hint ? (
-        <small className="form-field-hint" id={hintId}>
-          {hint}
-        </small>
-      ) : null}
-    </div>
+    <Input
+      {...fieldProps}
+      id={id}
+      label={label}
+      description={hint}
+      variant="bordered"
+      color="primary"
+      className="form-field"
+    />
   );
 }

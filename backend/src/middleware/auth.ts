@@ -1,7 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { AuthUser } from '../auth/auth.schema';
 import type { BackendDeps } from '../dependencies';
-import { unauthorized } from '../errors';
+import { forbidden, unauthorized } from '../errors';
 
 declare global {
   namespace Express {
@@ -27,15 +27,29 @@ export function requireAuth<
       }
 
       const payload = deps.tokenService.verifyAccessToken(token);
-      const user = await deps.prisma.user.findUnique({ where: { id: payload.sub } });
-      if (!user) {
+      const user = await deps.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true, name: true, role: true, status: true },
+      });
+      if (!user || user.status !== 'APPROVED') {
         throw unauthorized('Unauthorized');
       }
 
-      req.user = { id: user.id, email: user.email, name: user.name };
+      req.user = { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status };
       next();
     } catch {
       next(unauthorized('Unauthorized'));
     }
+  };
+}
+
+export function requireAdmin(): RequestHandler {
+  return (req, _res, next) => {
+    if (!req.user || req.user.status !== 'APPROVED' || req.user.role !== 'ADMIN') {
+      next(forbidden('Admin access required'));
+      return;
+    }
+
+    next();
   };
 }

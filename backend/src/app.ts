@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express, { type Express } from 'express';
 import rateLimit from 'express-rate-limit';
+import { createAdminRouter } from './admin/admin.router';
 import { createAuthRouter } from './auth/auth.router';
 import type { AppConfig } from './config';
 import type { BackendDeps } from './dependencies';
@@ -22,6 +23,7 @@ export function createApp(config: AppConfig, deps: BackendDeps): Express {
   app.use('/reviews', createReviewsRouter(deps));
   app.use('/recommendations', createRecommendationsRouter(deps));
   app.use('/finance', createFinanceRouter(deps));
+  app.use('/admin', createAdminRouter(deps));
 
   app.use((_req, _res, next) => {
     next(notFound('Not found'));

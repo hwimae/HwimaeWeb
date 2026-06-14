@@ -1,6 +1,8 @@
+import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
 import Link from "next/link";
 
 import { StoryListControls } from "@/components/story-list-controls";
+import { MetricPill } from "@/components/ui/metric-pill";
 import { PageShell } from "@/components/ui/page-shell";
 import { StatusMessage } from "@/components/ui/status-message";
 import { apiGet } from "@/lib/api";
@@ -30,8 +32,6 @@ type RecommendationsState = {
   recommendations: RecommendationsResponse;
   hasError: boolean;
 };
-
-export const dynamic = "force-dynamic";
 
 const EMPTY_STORIES: PaginatedStories = {
   items: [],
@@ -90,6 +90,7 @@ async function getStories(params: StoryListParams): Promise<StoriesState> {
       buildStoriesPath(params),
       undefined,
       parsePaginatedStories,
+      { next: { revalidate: 60 } },
     );
     return { stories, hasError: false };
   } catch (error) {
@@ -104,6 +105,7 @@ async function getPopularRecommendations(): Promise<RecommendationsState> {
       "/recommendations/popular?limit=6",
       undefined,
       parseRecommendationsResponse,
+      { next: { revalidate: 120 } },
     );
     return { recommendations, hasError: false };
   } catch (error) {
@@ -126,15 +128,28 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
       description="Khám phá truyện chữ và viết review để nhận gợi ý phù hợp."
     >
       <div className="section-stack">
-        <section className="card section-stack" aria-label="Chức năng truyện">
-          <h2>Chức năng truyện</h2>
-          <p className="result-summary">Các chức năng hiện có của khu Truyện vẫn nằm trong khu vực này.</p>
-          <nav className="app-nav" aria-label="Điều hướng chức năng truyện">
-            <Link href="/recommendations">AI tư vấn</Link>
-            <Link href="/login">Đăng nhập</Link>
-            <Link href="/register">Đăng ký</Link>
-          </nav>
-        </section>
+        <Card className="section-stack" shadow="sm" aria-label="Chức năng truyện">
+          <CardHeader className="section-stack">
+            <Chip color="primary" variant="flat">
+              Truyện
+            </Chip>
+            <h2>Chức năng truyện</h2>
+            <p className="result-summary">Các chức năng hiện có của khu Truyện vẫn nằm trong khu vực này.</p>
+          </CardHeader>
+          <CardBody>
+            <nav className="app-nav" aria-label="Điều hướng chức năng truyện">
+              <Button as={Link} href="/recommendations" color="primary">
+                AI tư vấn
+              </Button>
+              <Button as={Link} href="/login" color="primary" variant="flat">
+                Đăng nhập
+              </Button>
+              <Button as={Link} href="/register" color="primary" variant="flat">
+                Đăng ký
+              </Button>
+            </nav>
+          </CardBody>
+        </Card>
 
         <section className="section-stack">
           <h2>Gợi ý truyện phổ biến</h2>
@@ -153,10 +168,10 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
                   <h3 className="story-title">{item.title}</h3>
                   <p className="story-meta">Tác giả: {item.authors}</p>
                   <p className="story-meta">Thể loại: {item.category}</p>
-                  <p className="story-meta">
-                    Người dùng app: {item.averageRating.toFixed(1)} ({item.reviewCount} review)
-                  </p>
-                  <p className="recommendation-score">Score: {item.score.toFixed(2)}</p>
+                  <div className="form-actions">
+                    <MetricPill label="Rating" value={`${item.averageRating.toFixed(1)} · ${item.reviewCount} review`} />
+                    <MetricPill label="Score" value={item.score.toFixed(2)} tone="success" />
+                  </div>
                   <p className="recommendation-reason">{item.reason}</p>
                 </Link>
               ))}
@@ -184,19 +199,41 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
                   <Link key={story.id} href={`/stories/${story.id}`} className="story-card">
                     <h3 className="story-title">{story.title}</h3>
                     <p className="story-meta">Tác giả: {story.authors}</p>
-                    <p className="story-meta">
-                      Người dùng app: {story.userAverageRating.toFixed(1)} ({story.userReviewCount} review)
-                    </p>
+                    <div className="form-actions">
+                      <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} · ${story.userReviewCount} review`} />
+                      {story.hasContent ? (
+                        <Chip color="primary" variant="flat">
+                          Có nội dung
+                        </Chip>
+                      ) : null}
+                    </div>
                     <p className="story-meta">{story.category}</p>
                     {story.currentPrice !== null ? <p className="story-meta">Giá: {story.currentPrice}</p> : null}
-                    {story.hasContent ? <span className="story-badge">Có nội dung</span> : null}
                   </Link>
                 ))}
               </div>
               <nav className="pagination" aria-label="Phân trang danh sách truyện">
-                {stories.page > 1 ? <Link href={buildPageHref(params, stories.page - 1)}>Trước</Link> : <span>Trước</span>}
-                <span>Trang {stories.page} / {totalPages}</span>
-                {stories.page < totalPages ? <Link href={buildPageHref(params, stories.page + 1)}>Sau</Link> : <span>Sau</span>}
+                {stories.page > 1 ? (
+                  <Button as={Link} href={buildPageHref(params, stories.page - 1)} color="primary" variant="flat">
+                    Trước
+                  </Button>
+                ) : (
+                  <Button isDisabled color="primary" variant="flat">
+                    Trước
+                  </Button>
+                )}
+                <span>
+                  Trang {stories.page} / {totalPages}
+                </span>
+                {stories.page < totalPages ? (
+                  <Button as={Link} href={buildPageHref(params, stories.page + 1)} color="primary" variant="flat">
+                    Sau
+                  </Button>
+                ) : (
+                  <Button isDisabled color="primary" variant="flat">
+                    Sau
+                  </Button>
+                )}
               </nav>
             </>
           )}

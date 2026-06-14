@@ -12,7 +12,8 @@
     "prisma:migrate": "prisma migrate dev",
     "import:stories": "tsx src/scripts/import-books.ts",
     "import:comments": "tsx src/scripts/import-comments.ts",
-    "index:story-chunks": "tsx src/scripts/index-story-chunks.ts"
+    "index:story-chunks": "tsx src/scripts/index-story-chunks.ts",
+    "seed:admin": "tsx src/scripts/seed-admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

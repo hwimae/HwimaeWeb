@@ -7,11 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum FinanceGroupRole {
+  OWNER
+  MEMBER
+}
+
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
   passwordHash String
   name         String
+  role         UserRole     @default(USER)
+  status       UserStatus   @default(PENDING)
   ratings      Rating[]
   userReviews  UserReview[]
   financeCategories              FinanceCategory[]
@@ -22,6 +40,8 @@ model User {
   financeAIInteractions          FinanceAIInteraction[]
   financeCategorizationRules     FinanceCategorizationRule[]
   financeCategorizationFeedbacks FinanceCategorizationFeedback[]
+  ownedFinanceGroups             FinanceGroup[]       @relation("OwnedFinanceGroups")
+  financeGroupMembers            FinanceGroupMember[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -235,6 +255,33 @@ model FinanceBudget {
   @@index([userId])
   @@index([categoryId])
   @@map("finance_budgets")
+}
+
+model FinanceGroup {
+  id        String               @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     User                 @relation("OwnedFinanceGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   FinanceGroupMember[]
+  createdAt DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime             @updatedAt @db.Timestamptz(3)
+
+  @@index([ownerId])
+  @@map("finance_groups")
+}
+
+model FinanceGroupMember {
+  groupId   String
+  userId    String
+  role      FinanceGroupRole @default(MEMBER)
+  group     FinanceGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @db.Timestamptz(3)
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("finance_group_members")
 }
 
 model FinanceChatSession {

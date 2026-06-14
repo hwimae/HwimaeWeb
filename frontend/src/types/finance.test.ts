@@ -7,6 +7,9 @@ import {
   parseFinanceChatMessageResponse,
   parseFinanceChatStartResponse,
   parseFinanceExpenses,
+  parseFinanceGroupDetail,
+  parseFinanceGroupMemberDashboard,
+  parseFinanceGroups,
   parseFinanceInvoiceProcessResponse,
   parseSpendingSummary,
 } from "./finance";
@@ -149,6 +152,78 @@ describe("finance parsers", () => {
         sourceType: "image",
       },
     });
+  });
+
+  it("parses finance groups", () => {
+    expect(
+      parseFinanceGroups([
+        {
+          id: "group-1",
+          name: "Gia đình",
+          ownerId: "user-1",
+          currentUserRole: "OWNER",
+          memberCount: 2,
+          createdAt: "2026-06-14T00:00:00.000Z",
+          updatedAt: "2026-06-14T00:00:00.000Z",
+        },
+      ]),
+    ).toEqual([
+      {
+        id: "group-1",
+        name: "Gia đình",
+        ownerId: "user-1",
+        currentUserRole: "OWNER",
+        memberCount: 2,
+        createdAt: "2026-06-14T00:00:00.000Z",
+        updatedAt: "2026-06-14T00:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("rejects invalid finance group role", () => {
+    expect(() =>
+      parseFinanceGroups([
+        {
+          id: "group-1",
+          name: "Gia đình",
+          ownerId: "user-1",
+          currentUserRole: "ADMIN",
+          memberCount: 1,
+          createdAt: "2026-06-14T00:00:00.000Z",
+          updatedAt: "2026-06-14T00:00:00.000Z",
+        },
+      ]),
+    ).toThrow("Invalid finance group");
+  });
+
+  it("parses finance group detail", () => {
+    expect(
+      parseFinanceGroupDetail({
+        id: "group-1",
+        name: "Gia đình",
+        ownerId: "user-1",
+        currentUserRole: "OWNER",
+        memberCount: 2,
+        members: [
+          { userId: "user-1", name: "Boo", email: "boo@example.com", role: "OWNER", joinedAt: "2026-06-14T00:00:00.000Z" },
+          { userId: "user-2", name: "An", email: "an@example.com", role: "MEMBER", joinedAt: "2026-06-14T00:00:00.000Z" },
+        ],
+        createdAt: "2026-06-14T00:00:00.000Z",
+        updatedAt: "2026-06-14T00:00:00.000Z",
+      }),
+    ).toMatchObject({ id: "group-1", members: [{ userId: "user-1" }, { userId: "user-2" }] });
+  });
+
+  it("parses member dashboard using finance payloads", () => {
+    expect(
+      parseFinanceGroupMemberDashboard({
+        member: { userId: "user-2", name: "An", email: "an@example.com" },
+        categories: [{ id: "cat-1", name: "Ăn uống" }],
+        budgets: [{ id: "budget-1", categoryId: "cat-1", limitAmount: "1000000", period: "monthly", alertThreshold: 0.8 }],
+        expenses: [{ id: "expense-1", amount: "25000", merchantName: "Highlands", spentAt: "2026-06-14T00:00:00.000Z" }],
+        summary: { totalAmount: "25000", categories: [{ categoryId: "cat-1", categoryName: "Ăn uống", amount: "25000" }] },
+      }),
+    ).toMatchObject({ member: { userId: "user-2" }, expenses: [{ amount: 25000 }], summary: { totalAmount: 25000 } });
   });
 
   it("parses finance chat message response", () => {

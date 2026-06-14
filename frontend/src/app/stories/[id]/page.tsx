@@ -1,6 +1,8 @@
+import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
 import Link from "next/link";
 
 import { ReviewForm } from "@/components/review-form";
+import { MetricPill } from "@/components/ui/metric-pill";
 import { PageShell } from "@/components/ui/page-shell";
 import { StatusMessage } from "@/components/ui/status-message";
 import { apiGet } from "@/lib/api";
@@ -14,10 +16,9 @@ type StoryPageProps = {
   params: Promise<StoryPageParams>;
 };
 
-
 async function getStory(id: string): Promise<Story | null> {
   try {
-    return await apiGet<Story>(`/stories/${encodeURIComponent(id)}`, undefined, parseStory);
+    return await apiGet<Story>(`/stories/${encodeURIComponent(id)}`, undefined, parseStory, { next: { revalidate: 60 } });
   } catch (error) {
     console.error("[StoryDetailPage] Failed to fetch story", error);
     return null;
@@ -26,7 +27,7 @@ async function getStory(id: string): Promise<Story | null> {
 
 async function getStoryContent(id: string): Promise<StoryContent | null> {
   try {
-    return await apiGet<StoryContent>(`/stories/${encodeURIComponent(id)}/content`, undefined, parseStoryContent);
+    return await apiGet<StoryContent>(`/stories/${encodeURIComponent(id)}/content`, undefined, parseStoryContent, { next: { revalidate: 60 } });
   } catch (error) {
     console.error("[StoryDetailPage] Failed to fetch story content", error);
     return null;
@@ -44,9 +45,9 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
         description="Không thể tải chi tiết truyện hoặc truyện không tồn tại."
       >
         <div className="section-stack">
-          <p>
-            <Link href="/stories">← Quay lại danh sách truyện</Link>
-          </p>
+          <Button as={Link} href="/stories" color="primary" variant="flat">
+            ← Quay lại danh sách truyện
+          </Button>
           <StatusMessage tone="error">
             Backend chưa sẵn sàng hoặc truyện không tồn tại.
           </StatusMessage>
@@ -61,30 +62,32 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
       description={`Tác giả: ${story.authors}`}
     >
       <div className="section-stack">
-        <p>
-          <Link href="/stories">← Quay lại danh sách truyện</Link>
-        </p>
+        <Button as={Link} href="/stories" color="primary" variant="flat">
+          ← Quay lại danh sách truyện
+        </Button>
 
-        <section className="card section-stack" aria-label="Thông tin truyện">
-          <p>
-            <strong>Thể loại:</strong> {story.category}
-          </p>
-          <p>
-            <strong>Đánh giá từ người dùng app:</strong> {story.userAverageRating.toFixed(1)} / 5 ({story.userReviewCount} review)
-          </p>
-          <p>
-            <strong>Số trang:</strong> {story.pages ?? "Chưa rõ"}
-          </p>
-          <p>
-            <strong>Nhà xuất bản:</strong> {story.manufacturer ?? "Chưa rõ"}
-          </p>
-          <p>
-            <strong>Giá hiện tại:</strong> {story.currentPrice ?? "Chưa rõ"}
-          </p>
-          <p>
-            <strong>Giảm giá:</strong> {story.discount !== null ? `${Math.round(story.discount * 100)}%` : "Chưa rõ"}
-          </p>
-        </section>
+        <Card className="section-stack" shadow="sm" aria-label="Thông tin truyện">
+          <CardHeader className="form-actions">
+            <Chip color="primary" variant="flat">
+              {story.category}
+            </Chip>
+            <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} / 5 · ${story.userReviewCount} review`} />
+          </CardHeader>
+          <CardBody className="section-stack">
+            <p>
+              <strong>Số trang:</strong> {story.pages ?? "Chưa rõ"}
+            </p>
+            <p>
+              <strong>Nhà xuất bản:</strong> {story.manufacturer ?? "Chưa rõ"}
+            </p>
+            <p>
+              <strong>Giá hiện tại:</strong> {story.currentPrice ?? "Chưa rõ"}
+            </p>
+            <p>
+              <strong>Giảm giá:</strong> {story.discount !== null ? `${Math.round(story.discount * 100)}%` : "Chưa rõ"}
+            </p>
+          </CardBody>
+        </Card>
 
         <section className="reader-panel section-stack">
           <h2>Đọc truyện</h2>

@@ -1,20 +1,32 @@
 import { Prisma } from '@prisma/client';
 import type { BackendDeps } from '../dependencies';
-import { conflict, unauthorized } from '../errors';
-import type { AuthResponse, LoginInput, RegisterInput } from './auth.schema';
+import { conflict, forbidden, unauthorized } from '../errors';
+import type { AuthResponse, AuthUser, LoginInput, RegisterInput, RegisterResponse } from './auth.schema';
 
 export type AuthService = {
-  register(input: RegisterInput): Promise<AuthResponse>;
+  register(input: RegisterInput): Promise<RegisterResponse>;
   login(input: LoginInput): Promise<AuthResponse>;
 };
 
+function toAuthUser(user: AuthUser): AuthUser {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    status: user.status,
+  };
+}
+
 function createAuthResponse(
   deps: Pick<BackendDeps, 'tokenService'>,
-  user: { id: string; email: string; name: string },
+  user: AuthUser,
 ): AuthResponse {
+  const authUser = toAuthUser(user);
+
   return {
-    user: { id: user.id, email: user.email, name: user.name },
-    accessToken: deps.tokenService.signAccessToken(user),
+    user: authUser,
+    accessToken: deps.tokenService.signAccessToken(authUser),
   };
 }
 
@@ -32,10 +44,19 @@ export function createAuthService(
 
       try {
         const user = await deps.prisma.user.create({
-          data: { email: input.email, passwordHash, name: input.name },
+          data: {
+            email: input.email,
+            passwordHash,
+            name: input.name,
+            role: 'USER',
+            status: 'PENDING',
+          },
         });
 
-        return createAuthResponse(deps, user);
+        return {
+          user: toAuthUser(user),
+          message: 'Registration pending approval',
+        };
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
           throw conflict('Email already exists');
@@ -53,6 +74,14 @@ export function createAuthService(
       const valid = await deps.passwordHasher.compare(input.password, user.passwordHash);
       if (!valid) {
         throw unauthorized('Invalid credentials');
+      }
+
+      if (user.status === 'PENDING') {
+        throw forbidden('Account pending approval');
+      }
+
+      if (user.status === 'REJECTED') {
+        throw forbidden('Account rejected');
       }
 
       return createAuthResponse(deps, user);

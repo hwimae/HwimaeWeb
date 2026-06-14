@@ -23,6 +23,10 @@ const PAGE_COPY: Record<string, { title: string; description: string }> = {
     title: "Ngân sách",
     description: "Thiết lập hạn mức theo danh mục để kiểm soát thói quen chi tiêu.",
   },
+  "/finance/groups": {
+    title: "Nhóm tài chính",
+    description: "Chia sẻ dashboard tài chính cá nhân với các thành viên trong nhóm.",
+  },
 };
 
 const DEFAULT_COPY = {
@@ -41,6 +45,10 @@ export function FinanceShell({ children }: FinanceShellProps) {
   return (
     <PageShell title={copy.title} description={copy.description}>
       <div className="section-stack">
+        <section className="card section-stack finance-intro" aria-label="Tóm tắt khu tài chính">
+          <h2>Khu tài chính</h2>
+          <p>Quản lý chi tiêu và ngân sách với cùng nền giao diện xanh biển của toàn dự án.</p>
+        </section>
         <FinanceNav />
         {children}
       </div>
