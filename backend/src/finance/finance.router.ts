@@ -5,6 +5,7 @@ import { createFinanceBudgetsRouter } from './budgets/budgets.router';
 import { createFinanceCategoriesRouter } from './categories/categories.router';
 import { createFinanceChatRouter } from './chat/chat.router';
 import { createFinanceExpensesRouter } from './expenses/expenses.router';
+import { createFinanceGroupsRouter } from './groups/groups.router';
 import { createFinanceInvoicesRouter } from './invoices/invoices.router';
 import { createFinanceSpendingRouter } from './spending/spending.router';
 
@@ -17,6 +18,7 @@ export function createFinanceRouter(deps: BackendDeps): Router {
   router.use('/categories', createFinanceCategoriesRouter(deps));
   router.use('/expenses', createFinanceExpensesRouter(deps));
   router.use('/budgets', createFinanceBudgetsRouter(deps));
+  router.use('/groups', createFinanceGroupsRouter(deps));
   router.use('/spending', createFinanceSpendingRouter(deps));
   router.use('/chat', createFinanceChatRouter(deps));
   router.use('/advice', createFinanceAdviceRouter(deps));

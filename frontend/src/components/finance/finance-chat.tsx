@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, FormEvent, type MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
 
 import { StatusMessage } from "../ui/status-message";
 import { sendFinanceChatMessage, startFinanceChat, uploadFinanceInvoice } from "../../lib/finance-api";
@@ -47,12 +47,33 @@ export function getFinanceChatRetryAction(sessionId: string | null): "load-sessi
   return sessionId === null ? "load-session" : "retry-send";
 }
 
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "AbortError";
+export function getFinanceChatStartTimeoutMs(): number {
+  return 15000;
+}
+
+export function getFinanceChatStartErrorMessage(error: unknown, didTimeout: boolean): string {
+  if (didTimeout) {
+    return "Khởi tạo chat tài chính quá lâu. Vui lòng thử lại.";
+  }
+
+  return error instanceof Error ? error.message : "Không thể khởi tạo chat tài chính.";
+}
+
+export function markFinanceChatMounted(mountedRef: MutableRefObject<boolean> | { current: boolean }): () => void {
+  mountedRef.current = true;
+
+  return () => {
+    mountedRef.current = false;
+  };
+}
+
+export function resetFinanceChatStartRequest(startRequestRef: MutableRefObject<boolean> | { current: boolean }): void {
+  startRequestRef.current = false;
 }
 
 export function FinanceChat() {
   const mountedRef = useRef(true);
+  const startRequestRef = useRef(false);
   const messageIdRef = useRef(0);
   const imageReadIdRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,18 +88,30 @@ export function FinanceChat() {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<FinanceChatErrorState | null>(null);
 
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  useEffect(() => markFinanceChatMounted(mountedRef), []);
 
   const loadSession = useCallback(async (signal?: AbortSignal) => {
+    if (startRequestRef.current || sessionId !== null) return;
+
+    startRequestRef.current = true;
     setIsStarting(true);
     setError(null);
 
+    const timeoutController = new AbortController();
+    let didTimeout = false;
+    const timeoutId = window.setTimeout(() => {
+      didTimeout = true;
+      timeoutController.abort();
+    }, getFinanceChatStartTimeoutMs());
+
+    const abortFromParent = () => timeoutController.abort();
+    signal?.addEventListener("abort", abortFromParent, { once: true });
+
     try {
-      const session = await startFinanceChat({ sessionTitle: `Finance Chat - ${new Date().toLocaleString("vi-VN")}` }, { signal });
+      const session = await startFinanceChat(
+        { sessionTitle: `Finance Chat - ${new Date().toLocaleString("vi-VN")}` },
+        { signal: timeoutController.signal },
+      );
       if (!mountedRef.current) return;
 
       setSessionId(session.sessionId);
@@ -86,7 +119,7 @@ export function FinanceChat() {
       setRetrySubmission(null);
       setMessages([{ id: "initial", role: "assistant", content: session.initialMessage }]);
     } catch (error) {
-      if (isAbortError(error) || !mountedRef.current) return;
+      if ((signal?.aborted && !didTimeout) || !mountedRef.current) return;
 
       setSessionId(null);
       setPendingExpense(null);
@@ -94,20 +127,26 @@ export function FinanceChat() {
       setMessages([]);
       setError({
         kind: "session",
-        message: error instanceof Error ? error.message : "Không thể khởi tạo chat tài chính.",
+        message: getFinanceChatStartErrorMessage(error, didTimeout),
       });
     } finally {
-      if (mountedRef.current) {
-        setIsStarting(false);
+      window.clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", abortFromParent);
+      if (!signal?.aborted) {
+        resetFinanceChatStartRequest(startRequestRef);
+        if (mountedRef.current) {
+          setIsStarting(false);
+        }
       }
     }
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
     const controller = new AbortController();
     void loadSession(controller.signal);
 
     return () => {
+      resetFinanceChatStartRequest(startRequestRef);
       controller.abort();
     };
   }, [loadSession]);

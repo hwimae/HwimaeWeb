@@ -31,6 +31,38 @@ export type SpendingSummary = {
   categories: Array<{ categoryId: string | null; categoryName: string; amount: number }>;
 };
 
+export type FinanceGroupRole = "OWNER" | "MEMBER";
+
+export type FinanceGroupSummary = {
+  id: string;
+  name: string;
+  ownerId: string;
+  currentUserRole: FinanceGroupRole;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FinanceGroupMember = {
+  userId: string;
+  name: string;
+  email: string;
+  role: FinanceGroupRole;
+  joinedAt: string;
+};
+
+export type FinanceGroupDetail = FinanceGroupSummary & {
+  members: FinanceGroupMember[];
+};
+
+export type FinanceGroupMemberDashboard = {
+  member: { userId: string; name: string; email: string };
+  categories: FinanceCategory[];
+  budgets: FinanceBudget[];
+  expenses: FinanceExpense[];
+  summary: SpendingSummary;
+};
+
 export type FinanceChatStartResponse = {
   sessionId: string;
   initialMessage: string;
@@ -136,6 +168,29 @@ function parseOptionalDateString(value: unknown, errorMessage: string): string |
 
 function isFinanceBudgetPeriod(value: unknown): value is FinanceBudget["period"] {
   return value === "weekly" || value === "monthly" || value === "yearly";
+}
+
+function isFinanceGroupRole(value: unknown): value is FinanceGroupRole {
+  return value === "OWNER" || value === "MEMBER";
+}
+
+export function parseFinanceGroupMember(input: unknown): FinanceGroupMember {
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid finance group member");
+  }
+
+  const value = input as Partial<FinanceGroupMember>;
+  if (typeof value.userId !== "string" || typeof value.name !== "string" || typeof value.email !== "string" || !isFinanceGroupRole(value.role)) {
+    throw new Error("Invalid finance group member");
+  }
+
+  return {
+    userId: value.userId,
+    name: value.name,
+    email: value.email,
+    role: value.role,
+    joinedAt: parseRequiredDateString(value.joinedAt, "Invalid finance group member"),
+  };
 }
 
 function isFinanceChatExtractedExpense(value: unknown): value is FinanceChatMessageResponse["extractedExpense"] | undefined {
@@ -356,6 +411,78 @@ export function parseSpendingSummary(input: unknown): SpendingSummary {
   return {
     totalAmount: parseMoney(value.totalAmount, "Invalid spending summary"),
     categories: value.categories.map(parseSpendingSummaryCategory),
+  };
+}
+
+export function parseFinanceGroupSummary(input: unknown): FinanceGroupSummary {
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid finance group");
+  }
+
+  const value = input as Partial<FinanceGroupSummary>;
+  if (
+    typeof value.id !== "string" ||
+    typeof value.name !== "string" ||
+    typeof value.ownerId !== "string" ||
+    !isFinanceGroupRole(value.currentUserRole) ||
+    typeof value.memberCount !== "number"
+  ) {
+    throw new Error("Invalid finance group");
+  }
+
+  return {
+    id: value.id,
+    name: value.name,
+    ownerId: value.ownerId,
+    currentUserRole: value.currentUserRole,
+    memberCount: value.memberCount,
+    createdAt: parseRequiredDateString(value.createdAt, "Invalid finance group"),
+    updatedAt: parseRequiredDateString(value.updatedAt, "Invalid finance group"),
+  };
+}
+
+export function parseFinanceGroups(input: unknown): FinanceGroupSummary[] {
+  if (!Array.isArray(input)) {
+    throw new Error("Invalid finance groups");
+  }
+
+  return input.map(parseFinanceGroupSummary);
+}
+
+export function parseFinanceGroupDetail(input: unknown): FinanceGroupDetail {
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid finance group detail");
+  }
+
+  const value = input as Partial<FinanceGroupDetail>;
+  if (!Array.isArray(value.members)) {
+    throw new Error("Invalid finance group detail");
+  }
+
+  return { ...parseFinanceGroupSummary(value), members: value.members.map(parseFinanceGroupMember) };
+}
+
+export function parseFinanceGroupMemberDashboard(input: unknown): FinanceGroupMemberDashboard {
+  if (!input || typeof input !== "object") {
+    throw new Error("Invalid finance group member dashboard");
+  }
+
+  const value = input as Partial<FinanceGroupMemberDashboard>;
+  if (!value.member || typeof value.member !== "object") {
+    throw new Error("Invalid finance group member dashboard");
+  }
+
+  const member = value.member as Partial<FinanceGroupMemberDashboard["member"]>;
+  if (typeof member.userId !== "string" || typeof member.name !== "string" || typeof member.email !== "string") {
+    throw new Error("Invalid finance group member dashboard");
+  }
+
+  return {
+    member: { userId: member.userId, name: member.name, email: member.email },
+    categories: parseFinanceCategories(value.categories),
+    budgets: parseFinanceBudgets(value.budgets),
+    expenses: parseFinanceExpenses(value.expenses),
+    summary: parseSpendingSummary(value.summary),
   };
 }
 

@@ -1,4 +1,4 @@
-import { API_URL, apiGet, apiPost } from "./api";
+import { API_URL, ApiError, apiGet, apiPost } from "./api";
 import { getAccessToken } from "./auth";
 import {
   parseFinanceBudget,
@@ -8,6 +8,10 @@ import {
   parseFinanceChatStartResponse,
   parseFinanceExpense,
   parseFinanceExpenses,
+  parseFinanceGroupDetail,
+  parseFinanceGroupMember,
+  parseFinanceGroupMemberDashboard,
+  parseFinanceGroups,
   parseFinanceInvoiceProcessResponse,
   parseSpendingSummary,
   type FinanceBudget,
@@ -15,6 +19,10 @@ import {
   type FinanceChatMessageResponse,
   type FinanceChatStartResponse,
   type FinanceExpense,
+  type FinanceGroupDetail,
+  type FinanceGroupMember,
+  type FinanceGroupMemberDashboard,
+  type FinanceGroupSummary,
   type FinanceInvoiceProcessResponse,
   type SpendingSummary,
 } from "../types/finance";
@@ -30,6 +38,19 @@ function requireToken(): string {
   }
 
   return token;
+}
+
+async function readFinanceErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const json = (await response.json()) as unknown;
+    if (json && typeof json === "object" && typeof (json as { message?: unknown }).message === "string") {
+      return (json as { message: string }).message;
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
 }
 
 export async function getFinanceCategories(options: FinanceRequestOptions = {}): Promise<FinanceCategory[]> {
@@ -70,6 +91,65 @@ export async function deleteFinanceBudget(budgetId: string, options: FinanceRequ
   }
 }
 
+export async function listFinanceGroups(options: FinanceRequestOptions = {}): Promise<FinanceGroupSummary[]> {
+  return apiGet("/finance/groups", requireToken(), parseFinanceGroups, options);
+}
+
+export async function createFinanceGroup(body: unknown, options: FinanceRequestOptions = {}): Promise<FinanceGroupDetail> {
+  return apiPost("/finance/groups", body, requireToken(), parseFinanceGroupDetail, options);
+}
+
+export async function getFinanceGroup(groupId: string, options: FinanceRequestOptions = {}): Promise<FinanceGroupDetail> {
+  return apiGet(`/finance/groups/${groupId}`, requireToken(), parseFinanceGroupDetail, options);
+}
+
+export async function addFinanceGroupMember(groupId: string, body: unknown, options: FinanceRequestOptions = {}): Promise<FinanceGroupMember> {
+  return apiPost(`/finance/groups/${groupId}/members`, body, requireToken(), parseFinanceGroupMember, options);
+}
+
+export async function listFinanceGroupMemberExpenses(groupId: string, memberUserId: string, options: FinanceRequestOptions = {}): Promise<FinanceExpense[]> {
+  return apiGet(`/finance/groups/${groupId}/members/${memberUserId}/expenses`, requireToken(), parseFinanceExpenses, options);
+}
+
+export async function listFinanceGroupMemberBudgets(groupId: string, memberUserId: string, options: FinanceRequestOptions = {}): Promise<FinanceBudget[]> {
+  return apiGet(`/finance/groups/${groupId}/members/${memberUserId}/budgets`, requireToken(), parseFinanceBudgets, options);
+}
+
+async function deleteFinanceResource(path: string, options: FinanceRequestOptions = {}): Promise<void> {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${requireToken()}`,
+    },
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    const fallback = `DELETE ${path} failed with status ${response.status}`;
+    throw new ApiError("DELETE", path, response.status, await readFinanceErrorMessage(response, fallback));
+  }
+}
+
+export async function deleteFinanceGroupMember(groupId: string, memberUserId: string, options: FinanceRequestOptions = {}): Promise<void> {
+  return deleteFinanceResource(`/finance/groups/${groupId}/members/${memberUserId}`, options);
+}
+
+export async function deleteFinanceGroup(groupId: string, options: FinanceRequestOptions = {}): Promise<void> {
+  return deleteFinanceResource(`/finance/groups/${groupId}`, options);
+}
+
+export async function getFinanceGroupMemberDashboard(groupId: string, memberUserId: string, options: FinanceRequestOptions = {}): Promise<FinanceGroupMemberDashboard> {
+  return apiGet(`/finance/groups/${groupId}/members/${memberUserId}/dashboard`, requireToken(), parseFinanceGroupMemberDashboard, options);
+}
+
+export async function deleteFinanceGroupMemberExpense(groupId: string, memberUserId: string, expenseId: string, options: FinanceRequestOptions = {}): Promise<void> {
+  return deleteFinanceResource(`/finance/groups/${groupId}/members/${memberUserId}/expenses/${expenseId}`, options);
+}
+
+export async function deleteFinanceGroupMemberBudget(groupId: string, memberUserId: string, budgetId: string, options: FinanceRequestOptions = {}): Promise<void> {
+  return deleteFinanceResource(`/finance/groups/${groupId}/members/${memberUserId}/budgets/${budgetId}`, options);
+}
+
 export async function startFinanceChat(input: { sessionTitle?: string } = {}, options: FinanceRequestOptions = {}): Promise<FinanceChatStartResponse> {
   return apiPost("/finance/chat/start", input, requireToken(), parseFinanceChatStartResponse, options);
 }
@@ -78,6 +158,7 @@ export type SendFinanceChatMessageOptions = {
   messageType?: "text" | "image";
   isConfirmationResponse?: boolean;
   pendingExpense?: unknown;
+  signal?: AbortSignal;
 };
 
 export async function sendFinanceChatMessage(
@@ -95,6 +176,7 @@ export async function sendFinanceChatMessage(
     },
     requireToken(),
     parseFinanceChatMessageResponse,
+    { signal: options.signal },
   );
 }
 

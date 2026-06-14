@@ -1,8 +1,11 @@
 "use client";
 
+import { Button } from "@heroui/react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+
+import { FormField } from "@/components/ui/form-field";
 
 type StoryListControlsProps = {
   query: string;
@@ -31,8 +34,14 @@ export function StoryListControls({ query, hasContent }: StoryListControlsProps)
       }
 
       params.delete("page");
+      const current = searchParams.toString();
       const next = params.toString();
-      router.replace(next ? `${pathname}?${next}` : pathname);
+      const currentUrl = current ? `${pathname}?${current}` : pathname;
+      const nextUrl = next ? `${pathname}?${next}` : pathname;
+
+      if (nextUrl !== currentUrl) {
+        router.replace(nextUrl);
+      }
     }, 300);
 
     return () => window.clearTimeout(handle);
@@ -53,19 +62,17 @@ export function StoryListControls({ query, hasContent }: StoryListControlsProps)
   }, [hasContent, pathname, searchParams]);
 
   return (
-    <div className="card section-stack">
-      <div className="form-field">
-        <label htmlFor="story-search">Tìm kiếm truyện</label>
-        <input
-          id="story-search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Nhập tên truyện, tác giả hoặc thể loại..."
-        />
-      </div>
-      <Link href={hasContentHref}>
+    <div className="card section-stack story-controls">
+      <FormField
+        id="story-search"
+        label="Tìm kiếm truyện"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder="Nhập tên truyện, tác giả hoặc thể loại..."
+      />
+      <Button as={Link} href={hasContentHref} color="primary" variant={hasContent ? "solid" : "flat"}>
         {hasContent ? "Bỏ lọc truyện có nội dung đọc" : "Chỉ hiện truyện có nội dung đọc"}
-      </Link>
+      </Button>
     </div>
   );
 }

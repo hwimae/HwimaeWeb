@@ -5,6 +5,8 @@ import React, { useEffect, useState } from "react";
 import { StatusMessage } from "../ui/status-message";
 import { getFinanceCategories, getFinanceSpendingSummary, listFinanceBudgets, listFinanceExpenses } from "../../lib/finance-api";
 import type { FinanceBudget, FinanceCategory, FinanceExpense, SpendingSummary } from "../../types/finance";
+import { BudgetInsights } from "./budget-insights";
+import { BudgetUsageChart } from "./budget-usage-chart";
 import { CategoryCard } from "./category-card";
 import { buildFinanceCategoryMetrics } from "./finance-dashboard-data";
 import { ExpenseChart } from "./expense-chart";
@@ -120,12 +122,7 @@ export function FinanceDashboard() {
                 </tbody>
               </table>
             </div>
-            <div className="section-stack">
-              <label htmlFor="finance-dashboard-usage">Tiến độ sử dụng tổng ngân sách</label>
-              <progress id="finance-dashboard-usage" max={100} value={Math.min(usagePercentage, 100)}>
-                {usagePercentage}
-              </progress>
-            </div>
+            <BudgetUsageChart label="Mức sử dụng tổng ngân sách" spent={totalSpent} budget={totalBudget} />
           </section>
 
           <section className="section-stack" aria-label="Danh mục chi tiêu">
@@ -141,7 +138,10 @@ export function FinanceDashboard() {
             )}
           </section>
 
-          <ExpenseChart categories={categoriesWithBudget} />
+          <section className="finance-chart-grid" aria-label="Biểu đồ và cảnh báo ngân sách">
+            <ExpenseChart categories={categoriesWithBudget} />
+            <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} />
+          </section>
           <RecentTransactions expenses={state.expenses} categories={state.categories} />
         </>
       ) : null}

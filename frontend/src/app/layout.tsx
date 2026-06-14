@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { AuthGate } from "@/components/auth/auth-gate";
 import { GlobalHeader } from "@/components/ui/global-header";
+import { Providers } from "@/components/ui/providers";
 
 import "./globals.css";
 
@@ -17,8 +19,12 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body>
-        <GlobalHeader />
-        {children}
+        <Providers>
+          <AuthGate>
+            <GlobalHeader />
+            {children}
+          </AuthGate>
+        </Providers>
       </body>
     </html>
   );

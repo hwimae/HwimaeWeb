@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Card, CardBody, CardHeader, Radio, RadioGroup } from "@heroui/react";
 import { FormEvent, useId, useRef, useState } from "react";
 
 import { FormField } from "@/components/ui/form-field";
@@ -54,64 +55,60 @@ export function ReviewForm({ storyId }: ReviewFormProps) {
   return (
     <section aria-labelledby="review-title" className="section-stack">
       <h2 id="review-title">Viết review truyện</h2>
-      <form onSubmit={handleSubmit} className="card">
-        <div className="section-stack">
-          <fieldset disabled={isSubmitting} className="section-stack">
-            <legend>Điểm đánh giá</legend>
-            <div role="radiogroup" aria-label="Chọn số sao từ 1 đến 5" className="section-stack">
+      <Card shadow="sm">
+        <CardHeader>
+          <p className="result-summary">Chia sẻ cảm nhận để hệ thống hiểu gu đọc của bạn.</p>
+        </CardHeader>
+        <CardBody>
+          <form onSubmit={handleSubmit} className="section-stack">
+            <RadioGroup
+              label="Điểm đánh giá"
+              orientation="horizontal"
+              value={String(rating)}
+              onValueChange={(value) => setRating(Number(value))}
+              isDisabled={isSubmitting}
+              color="primary"
+            >
               {STAR_VALUES.map((star) => (
-                <label key={star}>
-                  <input
-                    type="radio"
-                    name="rating"
-                    value={star}
-                    checked={rating === star}
-                    onChange={() => setRating(star)}
-                  />{" "}
+                <Radio key={star} value={String(star)}>
                   {star} sao
-                </label>
+                </Radio>
               ))}
+            </RadioGroup>
+
+            <FormField
+              id={titleId}
+              label="Tiêu đề review"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+              maxLength={200}
+              aria-describedby={(error ?? message) ? statusId : undefined}
+            />
+
+            <FormField
+              id={contentId}
+              kind="textarea"
+              label="Nội dung review"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              required
+              maxLength={5000}
+              minRows={5}
+              aria-describedby={(error ?? message) ? statusId : undefined}
+            />
+
+            <Button color="primary" type="submit" isLoading={isSubmitting}>
+              {isSubmitting ? "Đang gửi..." : "Gửi review"}
+            </Button>
+
+            <div id={statusId} ref={statusRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
+              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+              {!error && message ? <StatusMessage tone="success">{message}</StatusMessage> : null}
             </div>
-          </fieldset>
-
-          <FormField
-            id={titleId}
-            label="Tiêu đề review"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            required
-            maxLength={200}
-            aria-describedby={(error ?? message) ? statusId : undefined}
-          />
-
-          <FormField
-            id={contentId}
-            kind="textarea"
-            label="Nội dung review"
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            required
-            maxLength={5000}
-            rows={5}
-            aria-describedby={(error ?? message) ? statusId : undefined}
-          />
-
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Đang gửi..." : "Gửi review"}
-          </button>
-
-          <div
-            id={statusId}
-            ref={statusRef}
-            aria-live="assertive"
-            aria-atomic="true"
-            tabIndex={-1}
-          >
-            {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-            {!error && message ? <StatusMessage tone="success">{message}</StatusMessage> : null}
-          </div>
-        </div>
-      </form>
+          </form>
+        </CardBody>
+      </Card>
     </section>
   );
 }

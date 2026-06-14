@@ -21,6 +21,10 @@ describe("CategoryCard", () => {
     expect(html).toContain("Ăn uống");
     expect(html).toContain("25.000");
     expect(html).toContain("100.000");
-    expect(html).toContain("Mức sử dụng ngân sách");
+    expect(html).toContain("Mức sử dụng ngân sách Ăn uống");
+    const progressTag = ["<", "progress"].join("");
+
+    expect(html).toContain("25.0%");
+    expect(html).not.toContain(progressTag);
   });
 });

@@ -1,7 +1,11 @@
 "use client";
 
+import { Button, Card, CardBody, CardHeader, Textarea } from "@heroui/react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+
+import { MetricPill } from "@/components/ui/metric-pill";
+import { StatusMessage } from "@/components/ui/status-message";
 import { apiPost } from "@/lib/api";
 import {
   parseStoryAdvisorResponse,
@@ -46,45 +50,48 @@ export function StoryAdvisorForm() {
   }
 
   return (
-    <section className="advisor-panel">
-      <form onSubmit={handleSubmit} className="advisor-form">
-        <label className="search-label" htmlFor="advisor-query">
-          Gu truyện của bạn
-          <textarea
-            id="advisor-query"
-            className="advisor-textarea"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            rows={4}
-          />
-        </label>
-        <button className="primary-button" type="submit" disabled={isLoading}>
+    <section className="advisor-panel section-stack">
+      <form onSubmit={handleSubmit} className="advisor-form section-stack">
+        <Textarea
+          id="advisor-query"
+          label="Gu truyện của bạn"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          minRows={4}
+          variant="bordered"
+          color="primary"
+        />
+        <Button color="primary" type="submit" isLoading={isLoading}>
           {isLoading ? "Đang hỏi AI…" : "Hỏi AI tư vấn"}
-        </button>
+        </Button>
       </form>
 
-      {error ? <p className="warning-text">{error}</p> : null}
+      {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
 
       {result ? (
-        <div className="advisor-result">
-          <h2>Kết quả tư vấn</h2>
-          <p className="advisor-answer">{result.answer}</p>
-          {result.recommendations.length === 0 ? (
-            <p>Chưa tìm thấy truyện phù hợp.</p>
-          ) : (
-            <div className="story-grid">
-              {result.recommendations.map((item) => (
-                <Link key={item.storyId} href={`/stories/${item.storyId}`} className="story-card recommendation-card">
-                  <h3 className="story-title">{item.title}</h3>
-                  <p className="story-meta">Tác giả: {item.authors}</p>
-                  <p className="story-meta">Thể loại: {item.category}</p>
-                  <p className="recommendation-score">Độ phù hợp: {(item.score * 100).toFixed(0)}%</p>
-                  <p className="recommendation-reason">{item.reason}</p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        <Card className="advisor-result" shadow="sm">
+          <CardHeader>
+            <h2>Kết quả tư vấn</h2>
+          </CardHeader>
+          <CardBody className="section-stack">
+            <p className="advisor-answer">{result.answer}</p>
+            {result.recommendations.length === 0 ? (
+              <p>Chưa tìm thấy truyện phù hợp.</p>
+            ) : (
+              <div className="story-grid">
+                {result.recommendations.map((item) => (
+                  <Link key={item.storyId} href={`/stories/${item.storyId}`} className="story-card recommendation-card">
+                    <h3 className="story-title">{item.title}</h3>
+                    <p className="story-meta">Tác giả: {item.authors}</p>
+                    <p className="story-meta">Thể loại: {item.category}</p>
+                    <MetricPill label="Độ phù hợp" value={`${(item.score * 100).toFixed(0)}%`} tone="success" />
+                    <p className="recommendation-reason">{item.reason}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
       ) : null}
     </section>
   );

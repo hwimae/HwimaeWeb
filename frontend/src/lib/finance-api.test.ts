@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  addFinanceGroupMember,
   createFinanceExpense,
+  createFinanceGroup,
   deleteFinanceBudget,
+  deleteFinanceGroup,
+  deleteFinanceGroupMemberBudget,
+  deleteFinanceGroupMemberExpense,
+  getFinanceGroupMemberDashboard,
+  listFinanceGroupMemberBudgets,
+  listFinanceGroupMemberExpenses,
   listFinanceBudgets,
   listFinanceExpenses,
+  listFinanceGroups,
   uploadFinanceInvoice,
   upsertFinanceBudget,
 } from "./finance-api";
@@ -22,6 +31,35 @@ describe("finance API wrapper", () => {
     expect(upsertFinanceBudget).toEqual(expect.any(Function));
     expect(deleteFinanceBudget).toEqual(expect.any(Function));
     expect(uploadFinanceInvoice).toEqual(expect.any(Function));
+  });
+
+  it("exports finance group helpers", () => {
+    expect(listFinanceGroups).toEqual(expect.any(Function));
+    expect(createFinanceGroup).toEqual(expect.any(Function));
+    expect(addFinanceGroupMember).toEqual(expect.any(Function));
+    expect(getFinanceGroupMemberDashboard).toEqual(expect.any(Function));
+    expect(listFinanceGroupMemberExpenses).toEqual(expect.any(Function));
+    expect(listFinanceGroupMemberBudgets).toEqual(expect.any(Function));
+    expect(deleteFinanceGroup).toEqual(expect.any(Function));
+    expect(deleteFinanceGroupMemberExpense).toEqual(expect.any(Function));
+    expect(deleteFinanceGroupMemberBudget).toEqual(expect.any(Function));
+  });
+
+  it("deletes member expense with group scoped path", async () => {
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: vi.fn(() => "token-123"),
+      },
+    });
+    const fetchMock = vi.fn(async () => ({ ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await deleteFinanceGroupMemberExpense("group-1", "user-2", "expense-1");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/finance/groups/group-1/members/user-2/expenses/expense-1"),
+      expect.objectContaining({ method: "DELETE", headers: { Authorization: "Bearer token-123" } }),
+    );
   });
 
   it("parses invoice upload response before returning", async () => {

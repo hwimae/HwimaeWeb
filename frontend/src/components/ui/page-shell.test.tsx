@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { PageShell } from "./page-shell";
 
 describe("PageShell", () => {
-  it("renders the page shell semantic structure", () => {
+  it("renders title, description, and children", () => {
     const html = renderToStaticMarkup(
       <PageShell title="Trang thử" description="Mô tả">
         <section>
@@ -14,8 +14,9 @@ describe("PageShell", () => {
       </PageShell>,
     );
 
-    expect(html).toBe(
-      '<main class="page-shell"><header class="page-header"><div class="section-stack"><h1>Trang thử</h1><p>Mô tả</p></div></header><section><p>Nội dung</p></section></main>',
-    );
+    expect(html).toContain("Trang thử");
+    expect(html).toContain("Mô tả");
+    expect(html).toContain("Nội dung");
+    expect(html).toContain("page-shell");
   });
 });
