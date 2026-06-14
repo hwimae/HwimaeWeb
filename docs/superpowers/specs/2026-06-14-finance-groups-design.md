@@ -7,18 +7,20 @@ Ngày: 2026-06-14
 Thiết kế này thêm chức năng nhóm trong khu Finance để người dùng chia sẻ việc sử dụng tài chính với nhau. Phạm vi MVP đã chốt:
 
 1. Nhóm là nhóm riêng tư, không phải cộng đồng công khai.
-2. Mỗi thành viên vẫn có dashboard tài chính cá nhân riêng.
-3. Khi cùng nhóm, các thành viên xem được dashboard, danh mục, ngân sách và giao dịch gần đây của nhau.
-4. Thành viên được sửa dữ liệu tài chính của chính mình, nhưng không được xóa bất kỳ dữ liệu nào.
-5. Chủ nhóm có quyền quản trị mạnh: thêm/xóa thành viên, xóa nhóm và xóa dữ liệu tài chính của thành viên trong nhóm.
-6. Chủ nhóm thêm thành viên bằng email tài khoản đã đăng ký.
-7. Hành động xóa dùng xác nhận đơn giản ở UI.
+2. Dữ liệu trong các màn Finance cá nhân và trong màn Nhóm dùng chung cùng một nguồn dữ liệu, không tạo bản sao riêng cho nhóm.
+3. Mỗi thành viên vẫn có dashboard tài chính cá nhân riêng, nhưng dashboard đó có thể được mở từ nhóm.
+4. Khi cùng nhóm, các thành viên xem được dashboard, danh mục, ngân sách và giao dịch gần đây của nhau bằng cách bấm vào nút tên từng thành viên.
+5. Thành viên được sửa dữ liệu tài chính của chính mình, nhưng không được xóa bất kỳ dữ liệu nào.
+6. Chủ nhóm có quyền quản trị mạnh: thêm/xóa thành viên, xóa nhóm và xóa dữ liệu tài chính của thành viên trong nhóm.
+7. Chủ nhóm thêm thành viên bằng email tài khoản đã đăng ký.
+8. Hành động xóa dùng xác nhận đơn giản ở UI.
 
 Thiết kế giữ kiến trúc hiện tại: backend Express + TypeScript + Prisma, frontend Next.js App Router + TypeScript. Module Finance hiện có đã có `expenses`, `budgets`, `categories`, `spending`, `chat`, `invoices`; chức năng nhóm sẽ mở rộng theo cùng pattern router/controller/service/schema/test.
 
 ## Quyết định đã chốt
 
 - Chọn hướng “lớp chia sẻ/quản trị trên dữ liệu cá nhân”.
+- Dữ liệu hiển thị trong `/finance/groups` là dữ liệu thật đang dùng ở các màn Finance cá nhân, không phải snapshot hay bản sao.
 - Không chuyển `FinanceExpense`, `FinanceBudget`, `FinanceCategory` sang dữ liệu sở hữu bởi group.
 - Thêm bảng group và membership để quyết định ai có quyền xem/quản trị dữ liệu finance của ai.
 - Role trong nhóm chỉ gồm `OWNER` và `MEMBER` cho MVP.
@@ -39,7 +41,7 @@ Thiết kế giữ kiến trúc hiện tại: backend Express + TypeScript + Pri
 - Không làm xóa mềm/thùng rác.
 - Không làm quyền riêng tư tuỳ biến theo từng trường dữ liệu.
 - Không làm role quản trị viên trung gian ngoài `OWNER` và `MEMBER`.
-- Không làm dashboard nhóm gộp toàn bộ dữ liệu thành một báo cáo chung; mỗi dashboard vẫn theo từng thành viên.
+- Không làm dashboard nhóm gộp toàn bộ dữ liệu thành một báo cáo chung; màn nhóm chỉ cung cấp các nút tên thành viên để mở dashboard finance dùng chung dữ liệu thật của từng người.
 
 ## Thiết kế dữ liệu Prisma
 
@@ -103,8 +105,9 @@ financeGroupMembers FinanceGroupMember[]
 - Khi tạo group, transaction sẽ tạo `FinanceGroup` và `FinanceGroupMember` cho owner với role `OWNER`.
 - `FinanceGroup.ownerId` là nguồn xác định chủ nhóm chính; membership role `OWNER` giúp query quyền nhanh và trả role cho frontend.
 - Không thêm `groupId` vào `FinanceExpense`, `FinanceBudget`, `FinanceCategory` trong MVP.
+- Màn Finance cá nhân và màn Nhóm đọc/ghi cùng các record `FinanceExpense`, `FinanceBudget`, `FinanceCategory` theo `userId`.
 - Khi xóa group, membership bị xóa cascade; dữ liệu finance cá nhân không bị xóa theo group.
-- Khi owner gọi API xóa dữ liệu của member, chỉ record finance được chỉ định mới bị xóa.
+- Khi owner gọi API xóa dữ liệu của member trong nhóm, record finance thật của member đó bị xóa và sẽ biến mất cả ở màn Finance cá nhân lẫn màn Nhóm.
 
 ## Backend module
 
@@ -253,7 +256,8 @@ Quy tắc:
 
 - User gọi API phải là thành viên group.
 - `memberUserId` phải là thành viên group.
-- Trả dữ liệu dashboard của `memberUserId`, không phải của user gọi API.
+- Trả dữ liệu dashboard thật của `memberUserId`, không phải của user gọi API.
+- Payload lấy từ cùng các bảng finance cá nhân đang phục vụ `/finance/dashboard`, `/finance/expenses`, `/finance/budgets` của member đó; không tạo dữ liệu group riêng.
 
 Response nên gom đủ dữ liệu cho UI:
 
@@ -380,7 +384,8 @@ Thêm các component dưới `frontend/src/components/finance/`:
 - `finance-groups.tsx`: container load state và phối hợp các component con.
 - `finance-groups-panel.tsx`: danh sách nhóm, nút tạo nhóm, trạng thái selected group.
 - `finance-group-detail.tsx`: chi tiết nhóm, danh sách member, form thêm member cho owner.
-- `finance-member-dashboard.tsx`: dashboard của member đang chọn.
+- `finance-member-selector.tsx`: dãy nút hiển thị tên từng thành viên; bấm vào tên nào thì mở nội dung finance của người đó.
+- `finance-member-dashboard.tsx`: dashboard của member đang chọn, dùng dữ liệu thật từ finance cá nhân của member đó.
 
 Có thể tái sử dụng component hiện có:
 
@@ -396,9 +401,9 @@ Có thể tái sử dụng component hiện có:
 Desktop: layout 2 cột.
 
 - Cột trái: danh sách group.
-- Cột phải: chi tiết group + dashboard member.
+- Cột phải: chi tiết group, dãy nút tên thành viên và dashboard finance của member đang chọn.
 
-Mobile: xếp dọc.
+Mobile: xếp dọc; dãy nút tên thành viên có thể cuộn ngang nếu nhiều người.
 
 Trang cần hiển thị rõ người đang xem dữ liệu:
 
@@ -434,10 +439,11 @@ Nếu user là `MEMBER`:
 3. Nếu không có group, hiển thị empty state và nút “Tạo nhóm đầu tiên”.
 4. Nếu có group, chọn group đầu tiên hoặc group vừa được tạo.
 5. Frontend gọi `GET /finance/groups/:groupId`.
-6. User chọn thành viên trong group.
-7. Frontend gọi `GET /finance/groups/:groupId/members/:memberUserId/dashboard`.
-8. Dashboard render từ payload trả về.
-9. Khi owner thêm/xóa member hoặc xóa dữ liệu, frontend refresh group detail/dashboard tương ứng.
+6. UI hiển thị dãy nút theo tên từng thành viên trong nhóm.
+7. User bấm vào tên thành viên muốn xem.
+8. Frontend gọi `GET /finance/groups/:groupId/members/:memberUserId/dashboard`.
+9. Dashboard render từ payload trả về, dùng cùng dữ liệu thật đang hiển thị trong finance cá nhân của member đó.
+10. Khi owner thêm/xóa member hoặc xóa dữ liệu, frontend refresh group detail/dashboard tương ứng.
 
 ## Empty, loading và error state
 
@@ -465,6 +471,7 @@ Thêm test cho `groups.service.ts`:
 - Member không thêm được member khác.
 - User ngoài group không xem được group detail.
 - Member xem được dashboard của member khác cùng group.
+- Dashboard group đọc đúng dữ liệu finance thật của `memberUserId`, không dùng bản sao group.
 - User ngoài group không xem được dashboard member.
 - Owner xóa được member thường.
 - Owner không xóa chính owner qua endpoint member delete.
@@ -514,7 +521,8 @@ Thêm test cho component group:
 - Member không thấy form thêm member.
 - Owner thấy nút xóa member/dữ liệu.
 - Member không thấy bất kỳ nút xóa nào.
-- Chọn member thì dashboard hiển thị tên member đang xem.
+- Danh sách thành viên hiển thị thành dãy nút theo tên từng người.
+- Bấm nút tên member thì dashboard hiển thị tên member đang xem và nội dung finance của member đó.
 - Sau khi xóa thành công, dashboard refresh hoặc item biến mất khỏi UI.
 
 ## Rủi ro và lưu ý triển khai
@@ -528,7 +536,8 @@ Thêm test cho component group:
 
 - User đăng nhập có thể tạo nhóm finance.
 - Owner có thể thêm thành viên bằng email đã đăng ký.
-- Thành viên cùng nhóm xem được dashboard, ngân sách, danh mục và giao dịch gần đây của nhau.
+- Thành viên cùng nhóm xem được dashboard, ngân sách, danh mục và giao dịch gần đây của nhau bằng cách bấm nút tên từng người.
+- Dữ liệu hiển thị trong nhóm dùng chung nguồn với các màn Finance cá nhân; không có bản sao dữ liệu nhóm.
 - Member không thấy và không gọi được thành công bất kỳ API xóa nào.
 - Owner xóa được member, group, expense và budget của member trong nhóm.
 - Các lỗi quyền trả đúng `403`; dữ liệu không tồn tại/không thuộc member trả đúng `404`.
