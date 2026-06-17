@@ -19,7 +19,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
   const remaining = Math.max(category.budget - category.spent, 0);
 
   return (
-    <Card as="article" className="section-stack" shadow="sm">
+    <Card as="article" className="section-stack glass-card" shadow="sm">
       <CardBody className="section-stack">
         <header className="section-stack">
           <div>

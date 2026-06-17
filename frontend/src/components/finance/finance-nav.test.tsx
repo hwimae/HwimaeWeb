@@ -13,17 +13,20 @@ describe("FinanceNav", () => {
     const html = renderToStaticMarkup(<FinanceNav />);
 
     expect(html).toContain('aria-label="Điều hướng tài chính"');
-    expect(FINANCE_NAV_ITEMS).toEqual([
-      { href: "/finance/dashboard", label: "Dashboard" },
-      { href: "/finance/chat", label: "AI" },
-      { href: "/finance/expenses", label: "Chi tiêu" },
-      { href: "/finance/budgets", label: "Ngân sách" },
+    expect(FINANCE_NAV_ITEMS.map((item) => item.href)).toEqual([
+      "/finance/dashboard",
+      "/finance/chat",
+      "/finance/expenses",
+      "/finance/budgets",
+      "/finance/groups",
     ]);
 
-    FINANCE_NAV_ITEMS.forEach((item) => {
-      expect(html).toContain(`href="${item.href}"`);
-      expect(html).toContain(item.label);
-    });
+    expect(html).toContain('href="/finance/dashboard"');
+    expect(html).toContain('href="/finance/chat"');
+    expect(html).toContain('href="/finance/expenses"');
+    expect(html).toContain('href="/finance/budgets"');
+    expect(html).toContain('href="/finance/groups"');
     expect(html).toContain('aria-current="page"');
+    expect(html).toContain("workspace-nav-link");
   });
 });

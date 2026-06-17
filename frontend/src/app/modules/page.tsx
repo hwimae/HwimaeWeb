@@ -28,12 +28,26 @@ const MODULES = [
 
 export default function ModulesPage() {
   return (
-    <PageShell title="Module" description="Tất cả khu vực chức năng đang có trong dự án.">
-      <div className="module-grid">
-        {MODULES.map((module) => (
-          <ModuleCard key={module.href} {...module} />
-        ))}
-      </div>
+    <PageShell
+      title="Tất cả module"
+      description="Chọn workspace bạn muốn dùng tiếp theo từ hệ giao diện chung của StoryRec."
+      eyebrow="Workspace index"
+      variant="workspace"
+    >
+      <section className="section-stack">
+        <div className="section-heading-row">
+          <div className="section-stack">
+            <p className="eyebrow">Module</p>
+            <h2>Các khu vực chính</h2>
+            <p className="result-summary">Tất cả khu vực chức năng đang có trong dự án.</p>
+          </div>
+        </div>
+        <div className="module-grid">
+          {MODULES.map((module) => (
+            <ModuleCard key={module.href} {...module} />
+          ))}
+        </div>
+      </section>
     </PageShell>
   );
 }

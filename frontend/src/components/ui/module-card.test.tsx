@@ -19,5 +19,21 @@ describe("ModuleCard", () => {
     expect(html).toContain('href="/stories"');
     expect(html).toContain("Gợi ý truyện");
     expect(html).toContain("Mở truyện");
+    expect(html).toContain("Sẵn sàng");
+  });
+
+  it("renders coming-soon status", () => {
+    const html = renderToStaticMarkup(
+      <ModuleCard
+        href="/movie"
+        label="Phim"
+        title="Không gian phim"
+        description="Đang phát triển."
+        cta="Xem phim"
+        status="Đang hoàn thiện"
+      />,
+    );
+
+    expect(html).toContain("Đang hoàn thiện");
   });
 });

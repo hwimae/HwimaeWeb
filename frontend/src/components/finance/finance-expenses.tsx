@@ -139,13 +139,13 @@ export function FinanceExpenses() {
 
   return (
     <section className="section-stack">
-      <header className="card section-stack">
+      <header className="workspace-card section-stack">
         <h2>Danh sách chi tiêu</h2>
         <p>Theo dõi toàn bộ các khoản chi đã ghi nhận trong hệ thống.</p>
         <p>Tổng đã ghi nhận: {formatFinanceMoney(total)}</p>
       </header>
 
-      <form className="card" onSubmit={handleSubmit}>
+      <form className="workspace-card" onSubmit={handleSubmit}>
         <h3>Thêm khoản chi thủ công</h3>
         <label className="form-field" htmlFor="expense-merchant">
           <span>Nơi chi</span>
@@ -198,7 +198,7 @@ export function FinanceExpenses() {
       {!state.isLoading && !state.error && expenses.length === 0 ? <StatusMessage>Chưa có khoản chi nào.</StatusMessage> : null}
 
       {!state.isLoading && !state.error && expenses.length > 0 ? (
-        <section className="card section-stack" aria-label="Bảng chi tiêu">
+        <section className="workspace-card section-stack" aria-label="Bảng chi tiêu">
           <h3>Chi tiết giao dịch</h3>
           <div className="table-wrap">
             <table>

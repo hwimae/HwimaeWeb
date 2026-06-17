@@ -20,7 +20,7 @@ export function RecentTransactions({ expenses, categories }: RecentTransactionsP
     .slice(0, 10);
 
   return (
-    <Card as="article" className="section-stack" shadow="sm">
+    <Card as="article" className="section-stack glass-card" shadow="sm">
       <CardBody className="section-stack">
         <header className="section-stack">
           <h2>Giao dịch gần đây</h2>

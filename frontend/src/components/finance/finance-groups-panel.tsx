@@ -26,7 +26,7 @@ export function FinanceGroupsPanel({ groups, selectedGroupId, isLoading, onSelec
   }
 
   return (
-    <aside className="card section-stack" aria-label="Danh sách nhóm tài chính">
+    <aside className="workspace-card section-stack" aria-label="Danh sách nhóm tài chính">
       <h2>Nhóm của tôi</h2>
       {isLoading ? <StatusMessage>Đang tải danh sách nhóm tài chính...</StatusMessage> : null}
       {!isLoading && groups.length === 0 ? <StatusMessage>Bạn chưa tham gia nhóm tài chính nào.</StatusMessage> : null}

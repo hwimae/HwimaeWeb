@@ -50,26 +50,34 @@ export function StoryAdvisorForm() {
   }
 
   return (
-    <section className="advisor-panel section-stack">
+    <section className="advisor-panel section-stack glass-card story-advisor-surface">
+      <div className="section-stack">
+        <p className="eyebrow">AI tư vấn truyện</p>
+        <h2>Tìm truyện cùng AI</h2>
+        <p className="result-summary">Mô tả gu đọc của bạn để hệ thống tìm các truyện gần nhất từ dữ liệu đã nhập.</p>
+      </div>
+
       <form onSubmit={handleSubmit} className="advisor-form section-stack">
         <Textarea
           id="advisor-query"
           label="Gu truyện của bạn"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          minRows={4}
+          minRows={5}
           variant="bordered"
           color="primary"
         />
-        <Button color="primary" type="submit" isLoading={isLoading}>
-          {isLoading ? "Đang hỏi AI…" : "Hỏi AI tư vấn"}
-        </Button>
+        <div className="form-actions">
+          <Button color="primary" type="submit" isLoading={isLoading}>
+            {isLoading ? "Đang hỏi AI…" : "Hỏi AI tư vấn"}
+          </Button>
+        </div>
       </form>
 
       {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
 
       {result ? (
-        <Card className="advisor-result" shadow="sm">
+        <Card className="advisor-result glass-card" shadow="sm">
           <CardHeader>
             <h2>Kết quả tư vấn</h2>
           </CardHeader>
