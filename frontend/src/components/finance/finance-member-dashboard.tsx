@@ -25,11 +25,11 @@ export function FinanceMemberDashboard({ dashboard, canDelete, onDeleteExpense, 
 
   return (
     <section className="section-stack" aria-label={`Nội dung Finance của ${dashboard.member.name}`}>
-      <header className="card section-stack">
+      <header className="workspace-card section-stack">
         <h2>Đang xem nội dung Finance của {dashboard.member.name}</h2>
         <p>Dữ liệu này dùng chung nguồn với dashboard Finance cá nhân của {dashboard.member.name}.</p>
       </header>
-      <section className="card section-stack" aria-label="Tổng quan thành viên">
+      <section className="workspace-card section-stack" aria-label="Tổng quan thành viên">
         <h3>Tổng quan</h3>
         <div className="table-wrap">
           <table>
@@ -58,7 +58,7 @@ export function FinanceMemberDashboard({ dashboard, canDelete, onDeleteExpense, 
       <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} />
       <RecentTransactions expenses={dashboard.expenses} categories={dashboard.categories} />
       {canDelete ? (
-        <section className="card section-stack" aria-label="Quản trị dữ liệu thành viên">
+        <section className="workspace-card section-stack" aria-label="Quản trị dữ liệu thành viên">
           <h3>Quản trị dữ liệu</h3>
           {dashboard.expenses.map((expense) => (
             <button key={expense.id} type="button" onClick={() => onDeleteExpense(expense.id)}>

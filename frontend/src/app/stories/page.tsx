@@ -1,9 +1,11 @@
 import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
 import Link from "next/link";
 
+import { StoryWorkspaceNav } from "@/components/stories/story-workspace-nav";
 import { StoryListControls } from "@/components/story-list-controls";
 import { MetricPill } from "@/components/ui/metric-pill";
 import { PageShell } from "@/components/ui/page-shell";
+import { PageState } from "@/components/ui/page-state";
 import { StatusMessage } from "@/components/ui/status-message";
 import { apiGet } from "@/lib/api";
 import {
@@ -125,19 +127,23 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
   return (
     <PageShell
       title="Truyện"
-      description="Khám phá truyện chữ và viết review để nhận gợi ý phù hợp."
+      description="Khám phá truyện chữ, đọc nội dung đã nhập và viết review để nhận gợi ý phù hợp."
+      eyebrow="Story workspace"
+      variant="workspace"
     >
       <div className="section-stack">
-        <Card className="section-stack" shadow="sm" aria-label="Chức năng truyện">
-          <CardHeader className="section-stack">
-            <Chip color="primary" variant="flat">
-              Truyện
-            </Chip>
-            <h2>Chức năng truyện</h2>
-            <p className="result-summary">Các chức năng hiện có của khu Truyện vẫn nằm trong khu vực này.</p>
-          </CardHeader>
-          <CardBody>
-            <nav className="app-nav" aria-label="Điều hướng chức năng truyện">
+        <StoryWorkspaceNav />
+
+        <section className="workspace-card section-stack story-feature-surface" aria-label="Khám phá truyện">
+          <div className="section-heading-row">
+            <div className="section-stack">
+              <p className="eyebrow">Truyện · Sáng tác & khám phá</p>
+              <h2>Khám phá thế giới truyện</h2>
+              <p className="result-summary">
+                Tìm kiếm, đọc và lưu trữ những câu chuyện tuyệt vời từ dữ liệu đã nhập.
+              </p>
+            </div>
+            <div className="page-header-actions">
               <Button as={Link} href="/recommendations" color="primary">
                 AI tư vấn
               </Button>
@@ -147,31 +153,41 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
               <Button as={Link} href="/register" color="primary" variant="flat">
                 Đăng ký
               </Button>
-            </nav>
-          </CardBody>
-        </Card>
+            </div>
+          </div>
+        </section>
 
         <section className="section-stack">
-          <h2>Gợi ý truyện phổ biến</h2>
-          <p className="result-summary">
-            Các truyện được xếp hạng theo rating và số lượng review từ người dùng app.
-          </p>
+          <div className="section-heading-row">
+            <div className="section-stack">
+              <p className="eyebrow">Nổi bật</p>
+              <h2>Gợi ý truyện phổ biến</h2>
+              <p className="result-summary">Các truyện được xếp hạng theo rating và số lượng review từ người dùng app.</p>
+            </div>
+          </div>
           {recommendationsHasError ? (
             <StatusMessage tone="error">Không thể tải gợi ý truyện lúc này.</StatusMessage>
           ) : null}
           {recommendations.items.length === 0 ? (
-            <p>Chưa có đủ review từ người dùng app để tạo gợi ý.</p>
+            <PageState
+              tone="empty"
+              title="Chưa có đủ gợi ý từ cộng đồng"
+              description="Hãy thêm review hoặc quay lại sau khi có thêm dữ liệu từ người dùng app."
+              cta={<Link href="/recommendations">Mở AI tư vấn</Link>}
+            />
           ) : (
             <div className="story-grid">
               {recommendations.items.map((item) => (
                 <Link key={item.storyId} href={`/stories/${item.storyId}`} className="story-card recommendation-card">
-                  <h3 className="story-title">{item.title}</h3>
-                  <p className="story-meta">Tác giả: {item.authors}</p>
-                  <p className="story-meta">Thể loại: {item.category}</p>
                   <div className="form-actions">
-                    <MetricPill label="Rating" value={`${item.averageRating.toFixed(1)} · ${item.reviewCount} review`} />
+                    <Chip color="primary" variant="flat">
+                      {item.category}
+                    </Chip>
                     <MetricPill label="Score" value={item.score.toFixed(2)} tone="success" />
                   </div>
+                  <h3 className="story-title">{item.title}</h3>
+                  <p className="story-meta">Tác giả: {item.authors}</p>
+                  <MetricPill label="Rating" value={`${item.averageRating.toFixed(1)} · ${item.reviewCount} review`} />
                   <p className="recommendation-reason">{item.reason}</p>
                 </Link>
               ))}
@@ -180,7 +196,12 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
         </section>
 
         <section className="section-stack">
-          <h2>Truyện mới nhập</h2>
+          <div className="section-heading-row">
+            <div className="section-stack">
+              <p className="eyebrow">Thư viện truyện</p>
+              <h2>Truyện mới nhập</h2>
+            </div>
+          </div>
           <StoryListControls query={params.query} hasContent={params.hasContent} />
           <p className="result-summary">
             Tìm thấy {stories.total} truyện{params.hasContent ? " có nội dung đọc" : ""}.
@@ -191,23 +212,29 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
             </StatusMessage>
           ) : null}
           {stories.items.length === 0 ? (
-            <p>Chưa có dữ liệu truyện phù hợp hoặc backend chưa sẵn sàng.</p>
+            <PageState
+              tone="empty"
+              title="Chưa có truyện phù hợp"
+              description="Hãy đổi từ khóa tìm kiếm hoặc bỏ bộ lọc nội dung đọc để xem thêm kết quả."
+            />
           ) : (
             <>
               <div className="story-grid">
                 {stories.items.map((story) => (
                   <Link key={story.id} href={`/stories/${story.id}`} className="story-card">
-                    <h3 className="story-title">{story.title}</h3>
-                    <p className="story-meta">Tác giả: {story.authors}</p>
                     <div className="form-actions">
-                      <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} · ${story.userReviewCount} review`} />
+                      <Chip color="primary" variant="flat">
+                        {story.category}
+                      </Chip>
                       {story.hasContent ? (
-                        <Chip color="primary" variant="flat">
+                        <Chip color="success" variant="flat">
                           Có nội dung
                         </Chip>
                       ) : null}
                     </div>
-                    <p className="story-meta">{story.category}</p>
+                    <h3 className="story-title">{story.title}</h3>
+                    <p className="story-meta">Tác giả: {story.authors}</p>
+                    <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} · ${story.userReviewCount} review`} />
                     {story.currentPrice !== null ? <p className="story-meta">Giá: {story.currentPrice}</p> : null}
                   </Link>
                 ))}

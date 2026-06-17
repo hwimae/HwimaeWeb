@@ -82,7 +82,7 @@ export function FinanceDashboard() {
 
   return (
     <section className="section-stack">
-      <header className="card section-stack">
+      <header className="workspace-card section-stack">
         <h2>Dashboard tài chính</h2>
         <p>Theo dõi tổng quan chi tiêu, ngân sách và các danh mục đang sử dụng.</p>
       </header>
@@ -92,7 +92,7 @@ export function FinanceDashboard() {
 
       {!state.isLoading && !state.error ? (
         <>
-          <section className="card section-stack" aria-label="Tổng quan ngân sách">
+          <section className="workspace-card section-stack" aria-label="Tổng quan ngân sách">
             <h3>Tổng quan</h3>
             <div className="table-wrap">
               <table>

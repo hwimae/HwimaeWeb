@@ -1,78 +1,155 @@
-import { Button, Card, CardBody, CardHeader, Link } from "@heroui/react";
+import { Card, CardBody, CardHeader, Chip, Link } from "@heroui/react";
+import {
+  ArrowRight,
+  BookOpenText,
+  Clapperboard,
+  Compass,
+  Film,
+  ReceiptText,
+  WalletCards,
+  type LucideIcon,
+} from "lucide-react";
 import NextLink from "next/link";
 
-import { ModuleCard } from "@/components/ui/module-card";
+const WORKSPACE_ITEMS: Array<{ label: string; value: string; icon: LucideIcon; tone: "stories" | "finance" | "movie" }> = [
+  {
+    label: "Truyện mới cập nhật",
+    value: "5",
+    icon: BookOpenText,
+    tone: "stories",
+  },
+  {
+    label: "Giao dịch cần duyệt",
+    value: "2",
+    icon: ReceiptText,
+    tone: "finance",
+  },
+  {
+    label: "Phim đang xem",
+    value: "1",
+    icon: Film,
+    tone: "movie",
+  },
+];
 
-const MODULES = [
+const MODULES: Array<{ href: string; title: string; description: string; cta: string; icon: LucideIcon; tone: "stories" | "finance" | "movie" }> = [
   {
     href: "/stories",
-    label: "Truyện",
-    title: "Khám phá truyện phù hợp",
-    description: "Tìm truyện, đọc nội dung đã nhập và viết review để hệ thống hiểu gu của bạn hơn.",
-    cta: "Mở khu truyện",
+    title: "Truyện",
+    description: "Không gian sáng tác, dịch thuật và quản lý kho tàng truyện của bạn với các công cụ hỗ trợ đọc và lưu trữ.",
+    cta: "Khám phá ngay",
+    icon: BookOpenText,
+    tone: "stories",
   },
   {
     href: "/finance/dashboard",
-    label: "Tài chính",
-    title: "Theo dõi tài chính cá nhân",
-    description: "Xem chi tiêu, ngân sách và các danh mục tài chính trong một giao diện gọn gàng.",
-    cta: "Xem tài chính",
+    title: "Tài chính",
+    description: "Kiểm soát dòng tiền, quản lý ngân sách nhóm và cá nhân minh bạch, an toàn và dễ theo dõi.",
+    cta: "Quản lý ngay",
+    icon: WalletCards,
+    tone: "finance",
   },
   {
     href: "/movie",
-    label: "Phim",
-    title: "Không gian phim",
-    description: "Khu vực dành cho các tính năng phim sẽ được hoàn thiện sau.",
-    cta: "Xem phim",
-    status: "Đang hoàn thiện" as const,
+    title: "Phim",
+    description: "Lưu trữ, đánh giá và chia sẻ danh sách những bộ phim yêu thích trong cùng hệ giao diện StoryRec.",
+    cta: "Xem danh sách",
+    icon: Clapperboard,
+    tone: "movie",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="page-shell">
-      <section className="hero-panel landing-hero">
-        <div className="section-stack">
-          <p className="eyebrow">Nền tảng cá nhân của boo</p>
-          <h1>Gợi ý truyện, quản lý tài chính và mở rộng module trong một giao diện xanh biển.</h1>
-          <p>
-            StoryRec giúp bạn khám phá truyện phù hợp, lưu review và dùng các module cá nhân với trải nghiệm đơn giản, dễ nhìn.
-          </p>
-          <div className="form-actions">
-            <Button as={NextLink} href="/stories" color="primary" size="lg">
-              Khám phá truyện
-            </Button>
-            <Button as={NextLink} href="/modules" color="primary" variant="flat" size="lg">
-              Xem module
-            </Button>
+    <main className="page-shell home-shell">
+      <section className="home-hero-grid" aria-labelledby="home-title">
+        <div className="home-hero-copy section-stack">
+          <div className="section-stack home-hero-text">
+            <h1 id="home-title" className="home-hero-title">
+              Không gian kể chuyện &amp; quản lý tài chính thông minh.
+            </h1>
+            <p className="home-hero-description">
+              Tổ chức công việc sáng tạo, theo dõi chi tiêu và khám phá nội dung giải trí trong một không gian duy nhất,
+              tĩnh lặng và tập trung.
+            </p>
+          </div>
+
+          <div className="home-action-row">
+            <NextLink href="/stories" className="home-action home-action-primary">
+              <Compass size={18} />
+              <span>Khám phá truyện</span>
+            </NextLink>
+            <NextLink href="/finance/dashboard" className="home-action home-action-secondary">
+              <WalletCards size={18} />
+              <span>Quản lý tài chính</span>
+            </NextLink>
+            <NextLink href="/modules" className="home-action home-action-tertiary">
+              <span>Xem tất cả module</span>
+              <ArrowRight size={18} />
+            </NextLink>
           </div>
         </div>
-        <Card className="landing-preview" shadow="sm">
-          <CardHeader>
-            <h2>Điểm nhấn</h2>
+
+        <Card className="home-workspace-card glass-card" shadow="sm">
+          <CardHeader className="home-workspace-header">
+            <div className="home-workspace-title-wrap">
+              <div className="home-workspace-title-icon">
+                <BookOpenText size={18} />
+              </div>
+              <h2>Workspace hôm nay</h2>
+            </div>
+            <Chip size="sm" variant="flat" color="primary">
+              Bản xem trước
+            </Chip>
           </CardHeader>
-          <CardBody className="section-stack">
-            <p>Giao diện thống nhất bằng HeroUI.</p>
-            <p>Màu chủ đạo xanh nước biển.</p>
-            <p>Giữ nguyên dữ liệu và API hiện có.</p>
+          <CardBody>
+            <ul className="home-workspace-list" role="list">
+              {WORKSPACE_ITEMS.map(({ label, value, icon: Icon, tone }) => (
+                <li key={label} className={`home-workspace-item home-workspace-item-${tone}`}>
+                  <div className="home-workspace-item-copy">
+                    <span className={`home-workspace-item-icon home-workspace-item-icon-${tone}`}>
+                      <Icon size={18} />
+                    </span>
+                    <span className="home-workspace-item-label">{label}</span>
+                  </div>
+                  <strong className="home-workspace-item-value">{value}</strong>
+                </li>
+              ))}
+            </ul>
           </CardBody>
         </Card>
       </section>
 
-      <section className="section-stack" aria-labelledby="home-modules-title">
-        <div className="section-stack">
-          <h2 id="home-modules-title">Các khu vực chính</h2>
-          <p className="result-summary">Chọn module bạn muốn sử dụng.</p>
-        </div>
-        <div className="module-grid">
-          {MODULES.map((module) => (
-            <ModuleCard key={module.href} {...module} />
-          ))}
-        </div>
-        <Link as={NextLink} href="/recommendations" color="primary">
-          Dùng AI tư vấn truyện →
-        </Link>
+      <section className="home-module-grid" aria-label="Các module chính của StoryRec">
+        {MODULES.map(({ href, title, description, cta, icon: Icon, tone }) => (
+          <Link key={href} as={NextLink} href={href} className={`home-module-card home-module-card-${tone}`}>
+            <span className={`home-module-icon home-module-icon-${tone}`}>
+              <Icon size={30} strokeWidth={2.1} />
+            </span>
+            <h2>{title}</h2>
+            <p>{description}</p>
+            <span className={`home-module-link home-module-link-${tone}`}>
+              {cta}
+              <ArrowRight size={16} />
+            </span>
+          </Link>
+        ))}
       </section>
+
+      <footer className="home-footer">
+        <p>© 2024 StoryRec. Không gian kể chuyện sáng tạo.</p>
+        <div className="home-footer-links">
+          <Link as={NextLink} href="/stories">
+            Truyện
+          </Link>
+          <Link as={NextLink} href="/finance/dashboard">
+            Tài chính
+          </Link>
+          <Link as={NextLink} href="/recommendations">
+            AI tư vấn
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 }

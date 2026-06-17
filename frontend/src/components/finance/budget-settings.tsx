@@ -119,7 +119,7 @@ export function BudgetSettings() {
 
   return (
     <section className="section-stack">
-      <header className="card section-stack">
+      <header className="workspace-card section-stack">
         <h2>Ngân sách theo danh mục</h2>
         <p>Thiết lập hạn mức cho từng nhóm chi tiêu cá nhân.</p>
       </header>
@@ -130,7 +130,7 @@ export function BudgetSettings() {
       {!isLoading && !error && categories.length === 0 ? <StatusMessage>Chưa có danh mục để cấu hình ngân sách.</StatusMessage> : null}
 
       {!isLoading && !error && categories.length > 0 ? (
-        <form className="card section-stack" onSubmit={(event) => {
+        <form className="workspace-card section-stack" onSubmit={(event) => {
           event.preventDefault();
           void handleSave();
         }}>

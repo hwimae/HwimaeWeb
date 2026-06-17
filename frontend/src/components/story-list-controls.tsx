@@ -62,7 +62,11 @@ export function StoryListControls({ query, hasContent }: StoryListControlsProps)
   }, [hasContent, pathname, searchParams]);
 
   return (
-    <div className="card section-stack story-controls">
+    <div className="workspace-card section-stack story-controls">
+      <div className="section-stack">
+        <p className="eyebrow">Bộ lọc</p>
+        <h3>Tìm truyện theo gu của bạn</h3>
+      </div>
       <FormField
         id="story-search"
         label="Tìm kiếm truyện"
@@ -70,9 +74,11 @@ export function StoryListControls({ query, hasContent }: StoryListControlsProps)
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Nhập tên truyện, tác giả hoặc thể loại..."
       />
-      <Button as={Link} href={hasContentHref} color="primary" variant={hasContent ? "solid" : "flat"}>
-        {hasContent ? "Bỏ lọc truyện có nội dung đọc" : "Chỉ hiện truyện có nội dung đọc"}
-      </Button>
+      <div className="form-actions">
+        <Button as={Link} href={hasContentHref} color="primary" variant={hasContent ? "solid" : "flat"}>
+          {hasContent ? "Bỏ lọc truyện có nội dung đọc" : "Chỉ hiện truyện có nội dung đọc"}
+        </Button>
+      </div>
     </div>
   );
 }

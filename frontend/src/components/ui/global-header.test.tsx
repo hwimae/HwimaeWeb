@@ -24,10 +24,11 @@ describe("GlobalHeader", () => {
     mockedLogout.mockClear();
   });
 
-  it("hiển thị thương hiệu và các mục điều hướng chính", () => {
+  it("renders the brand and primary navigation items", () => {
     const html = renderToStaticMarkup(<GlobalHeader />);
 
     expect(html).toContain("StoryRec");
+    expect(html).toContain('href="/"');
     expect(html).toContain('href="/finance/dashboard"');
     expect(html).not.toContain('href="/finance"');
     expect(html).toContain('href="/stories"');
@@ -37,11 +38,11 @@ describe("GlobalHeader", () => {
     expect(html).toContain('href="/register"');
     expect(html).toContain("Login");
     expect(html).toContain("Register");
-    expect(html).not.toContain("Logout");
+    expect(html).not.toContain("Đăng xuất");
     expect(html).not.toContain('href="/admin/users"');
   });
 
-  it("đánh dấu tab tài chính active trên các trang con finance", () => {
+  it("keeps the finance tab active across finance sub-pages", () => {
     mockedPathname = "/finance/groups";
 
     const html = renderToStaticMarkup(<GlobalHeader />);
@@ -50,7 +51,7 @@ describe("GlobalHeader", () => {
     expect(html).toContain('aria-current="page"');
   });
 
-  it("hiển thị logout khi user đã đăng nhập", () => {
+  it("shows logout actions for authenticated users", () => {
     mockedPathname = "/finance/dashboard";
     mockedUser = {
       id: "user1",
@@ -62,12 +63,13 @@ describe("GlobalHeader", () => {
 
     const html = renderToStaticMarkup(<GlobalHeader />);
 
-    expect(html).toContain("Logout");
+    expect(html).toContain("Đăng xuất");
+    expect(html).toContain("User");
     expect(html).not.toContain('href="/login"');
     expect(html).not.toContain('href="/register"');
   });
 
-  it("hiển thị link admin cho admin đã duyệt", () => {
+  it("shows the admin entry for approved admins", () => {
     mockedPathname = "/finance/dashboard";
     mockedUser = {
       id: "admin1",
@@ -81,6 +83,6 @@ describe("GlobalHeader", () => {
 
     expect(html).toContain('href="/admin/users"');
     expect(html).toContain("Admin");
-    expect(html).toContain("Logout");
+    expect(html).toContain("Đăng xuất");
   });
 });

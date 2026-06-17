@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  Button,
-  Link as HeroLink,
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-} from "@heroui/react";
+import { Button, Link as HeroLink } from "@heroui/react";
+import { CircleUserRound, Search, ShieldUser } from "lucide-react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -15,14 +9,19 @@ import React from "react";
 import { useAuth } from "@/components/auth/auth-context";
 
 const MODULE_LINKS = [
-  { href: "/finance/dashboard", label: "Tài chính" },
+  { href: "/", label: "Home" },
   { href: "/stories", label: "Truyện" },
+  { href: "/finance/dashboard", label: "Tài chính" },
   { href: "/movie", label: "Phim" },
 ] as const;
 
 const STORY_PATH_PREFIXES = ["/stories", "/recommendations", "/login", "/register"];
 
 function isModuleActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === "/" || pathname === "/modules";
+  }
+
   if (href === "/finance/dashboard") {
     return pathname === "/finance" || pathname.startsWith("/finance/");
   }
@@ -43,53 +42,100 @@ export function GlobalHeader() {
       : MODULE_LINKS;
 
   return (
-    <Navbar className="global-header" maxWidth="xl" isBordered>
-      <NavbarBrand>
+    <header className="global-header">
+      <div className="global-header-shell">
         <HeroLink as={NextLink} href="/" color="foreground" className="global-header-brand">
-          StoryRec
+          <span className="global-header-brand-mark">StoryRec</span>
         </HeroLink>
-      </NavbarBrand>
-      <NavbarContent justify="end" className="global-header-nav">
-        {links.map((item) => {
-          const isActive = isModuleActive(pathname, item.href);
 
-          return (
-            <NavbarItem key={item.href} isActive={isActive}>
+        <nav className="global-header-menu" aria-label="Điều hướng chính">
+          {links.map((item) => {
+            const isActive = isModuleActive(pathname, item.href);
+
+            return (
               <HeroLink
+                key={item.href}
                 as={NextLink}
                 href={item.href}
-                color={isActive ? "primary" : "foreground"}
+                color="foreground"
                 aria-current={isActive ? "page" : undefined}
-                className="global-header-link"
+                className="global-header-nav-link"
               >
                 {item.label}
               </HeroLink>
-            </NavbarItem>
-          );
-        })}
-        {!isCheckingAuth && (
-          user ? (
-            <NavbarItem>
-              <Button color="primary" variant="flat" className="global-header-link" onPress={logout}>
-                Logout
-              </Button>
-            </NavbarItem>
-          ) : (
-            <>
-              <NavbarItem>
-                <Button as={NextLink} href="/login" color="primary" variant="flat" className="global-header-link">
+            );
+          })}
+        </nav>
+
+        <div className="global-header-actions">
+          <Button
+            as={NextLink}
+            href="/stories"
+            isIconOnly
+            variant="light"
+            radius="full"
+            aria-label="Tìm kiếm truyện"
+            className="global-header-icon-button"
+          >
+            <Search size={16} />
+          </Button>
+
+          {user?.role === "ADMIN" && user.status === "APPROVED" ? (
+            <Button
+              as={NextLink}
+              href="/admin/users"
+              isIconOnly
+              variant="light"
+              radius="full"
+              aria-label="Quản trị người dùng"
+              className="global-header-icon-button"
+            >
+              <ShieldUser size={16} />
+            </Button>
+          ) : null}
+
+          {!isCheckingAuth &&
+            (user ? (
+              <>
+                <div className="global-header-account">
+                  <CircleUserRound size={16} />
+                  <span>{user.name}</span>
+                </div>
+                <Button
+                  color="primary"
+                  variant="flat"
+                  radius="full"
+                  className="global-header-auth-button global-header-register-button"
+                  onPress={logout}
+                >
+                  Đăng xuất
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  as={NextLink}
+                  href="/login"
+                  color="primary"
+                  variant="light"
+                  radius="full"
+                  className="global-header-auth-button global-header-login-button"
+                >
                   Login
                 </Button>
-              </NavbarItem>
-              <NavbarItem>
-                <Button as={NextLink} href="/register" color="primary" className="global-header-link">
+                <Button
+                  as={NextLink}
+                  href="/register"
+                  color="primary"
+                  radius="full"
+                  className="global-header-auth-button global-header-register-button"
+                >
                   Register
                 </Button>
-              </NavbarItem>
-            </>
-          )
-        )}
-      </NavbarContent>
-    </Navbar>
+              </>
+            ))}
+        </div>
+      </div>
+    </header>
   );
 }

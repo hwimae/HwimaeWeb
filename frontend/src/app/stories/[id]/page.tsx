@@ -2,8 +2,10 @@ import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
 import Link from "next/link";
 
 import { ReviewForm } from "@/components/review-form";
+import { StoryWorkspaceNav } from "@/components/stories/story-workspace-nav";
 import { MetricPill } from "@/components/ui/metric-pill";
 import { PageShell } from "@/components/ui/page-shell";
+import { PageState } from "@/components/ui/page-state";
 import { StatusMessage } from "@/components/ui/status-message";
 import { apiGet } from "@/lib/api";
 import { parseStory, parseStoryContent, type Story, type StoryContent } from "@/types/story";
@@ -43,14 +45,18 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
       <PageShell
         title="Không tìm thấy truyện"
         description="Không thể tải chi tiết truyện hoặc truyện không tồn tại."
+        eyebrow="Chi tiết truyện"
+        variant="workspace"
       >
         <div className="section-stack">
           <Button as={Link} href="/stories" color="primary" variant="flat">
             ← Quay lại danh sách truyện
           </Button>
-          <StatusMessage tone="error">
-            Backend chưa sẵn sàng hoặc truyện không tồn tại.
-          </StatusMessage>
+          <PageState
+            tone="info"
+            title="Truyện hiện chưa khả dụng"
+            description="Backend chưa sẵn sàng hoặc truyện không tồn tại trong dữ liệu hiện tại."
+          />
         </div>
       </PageShell>
     );
@@ -60,18 +66,27 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
     <PageShell
       title={story.title}
       description={`Tác giả: ${story.authors}`}
+      eyebrow="Chi tiết truyện"
+      variant="workspace"
     >
       <div className="section-stack">
         <Button as={Link} href="/stories" color="primary" variant="flat">
           ← Quay lại danh sách truyện
         </Button>
+        <StoryWorkspaceNav />
 
-        <Card className="section-stack" shadow="sm" aria-label="Thông tin truyện">
-          <CardHeader className="form-actions">
-            <Chip color="primary" variant="flat">
-              {story.category}
-            </Chip>
-            <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} / 5 · ${story.userReviewCount} review`} />
+        <Card className="section-stack glass-card story-summary-card" shadow="sm" aria-label="Thông tin truyện">
+          <CardHeader className="story-summary-header">
+            <div className="section-stack">
+              <div className="form-actions">
+                <Chip color="primary" variant="flat">
+                  {story.category}
+                </Chip>
+                <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} / 5 · ${story.userReviewCount} review`} />
+              </div>
+              <h2>{story.title}</h2>
+              <p className="result-summary">Tác giả: {story.authors}</p>
+            </div>
           </CardHeader>
           <CardBody className="section-stack">
             <p>
@@ -89,8 +104,11 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
           </CardBody>
         </Card>
 
-        <section className="reader-panel section-stack">
-          <h2>Đọc truyện</h2>
+        <section className="reader-panel story-reader-surface section-stack">
+          <div className="section-stack">
+            <p className="eyebrow">Đọc truyện</p>
+            <h2>Nội dung</h2>
+          </div>
           {storyContent ? (
             <article className="story-reader">
               {storyContent.content.split(/\r?\n/).map((paragraph, index) =>

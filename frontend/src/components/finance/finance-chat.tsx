@@ -297,7 +297,7 @@ export function FinanceChat() {
 
   return (
     <section className="section-stack">
-      <header className="card section-stack">
+      <header className="workspace-card section-stack">
         <h2>Chat AI tài chính</h2>
         <p>Hỏi trợ lý về chi tiêu, hóa đơn, ngân sách và các gợi ý tài chính cá nhân.</p>
       </header>
@@ -320,7 +320,7 @@ export function FinanceChat() {
         </StatusMessage>
       ) : null}
 
-      <section className="card section-stack" aria-label="Lịch sử chat tài chính">
+      <section className="workspace-card section-stack" aria-label="Lịch sử chat tài chính">
         <h3>Hội thoại</h3>
         <div className="chat-log" role="log" aria-live="polite" aria-relevant="additions text">
           {messages.map((message) => (
@@ -344,7 +344,7 @@ export function FinanceChat() {
       </section>
 
       {imagePreview ? (
-        <section className="card section-stack" aria-label="Xem trước hóa đơn">
+        <section className="workspace-card section-stack" aria-label="Xem trước hóa đơn">
           <h3>Ảnh hóa đơn đã chọn</h3>
           <Image src={imagePreview} alt="Xem trước hóa đơn" width={240} height={160} unoptimized style={{ height: "auto" }} />
           <div>
@@ -355,7 +355,7 @@ export function FinanceChat() {
         </section>
       ) : null}
 
-      <form className="card section-stack" onSubmit={handleSubmit}>
+      <form className="workspace-card section-stack" onSubmit={handleSubmit}>
         <label htmlFor="finance-chat-message">Tin nhắn</label>
         <textarea
           id="finance-chat-message"

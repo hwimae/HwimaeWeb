@@ -53,11 +53,15 @@ export function ReviewForm({ storyId }: ReviewFormProps) {
   }
 
   return (
-    <section aria-labelledby="review-title" className="section-stack">
-      <h2 id="review-title">Viết review truyện</h2>
-      <Card shadow="sm">
+    <section aria-labelledby="review-title" className="section-stack workspace-card review-form-surface">
+      <div className="section-stack">
+        <p className="eyebrow">Đánh giá</p>
+        <h2 id="review-title">Viết review truyện</h2>
+        <p className="result-summary">Chia sẻ cảm nhận để hệ thống hiểu gu đọc của bạn hơn.</p>
+      </div>
+      <Card className="glass-card" shadow="sm">
         <CardHeader>
-          <p className="result-summary">Chia sẻ cảm nhận để hệ thống hiểu gu đọc của bạn.</p>
+          <p className="result-summary">Điểm số và nhận xét của bạn sẽ giúp khu AI tư vấn đề xuất truyện chính xác hơn.</p>
         </CardHeader>
         <CardBody>
           <form onSubmit={handleSubmit} className="section-stack">

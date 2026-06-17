@@ -43,13 +43,17 @@ export function FinanceShell({ children }: FinanceShellProps) {
   const copy = PAGE_COPY[pathname] ?? DEFAULT_COPY;
 
   return (
-    <PageShell title={copy.title} description={copy.description}>
+    <PageShell title={copy.title} description={copy.description} eyebrow="Finance workspace" variant="workspace">
       <div className="section-stack">
-        <section className="card section-stack finance-intro" aria-label="Tóm tắt khu tài chính">
-          <h2>Khu tài chính</h2>
-          <p>Quản lý chi tiêu và ngân sách với cùng nền giao diện xanh biển của toàn dự án.</p>
-        </section>
         <FinanceNav />
+        <section className="workspace-card finance-intro" aria-label="Tóm tắt khu tài chính">
+          <div className="section-heading-row">
+            <div className="section-stack">
+              <h2>Khu tài chính</h2>
+              <p>Quản lý chi tiêu, ngân sách, nhóm chia sẻ và AI tài chính trong cùng một workspace xanh biển.</p>
+            </div>
+          </div>
+        </section>
         {children}
       </div>
     </PageShell>

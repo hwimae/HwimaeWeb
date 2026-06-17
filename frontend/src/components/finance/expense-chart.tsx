@@ -40,7 +40,7 @@ export function ExpenseChart({ categories }: ExpenseChartProps) {
   }));
 
   return (
-    <article className="card section-stack">
+    <article className="workspace-card section-stack">
       <header className="section-stack">
         <h2>Biểu đồ chi tiêu</h2>
         <p>So sánh chi tiêu hiện tại với ngân sách của từng danh mục.</p>

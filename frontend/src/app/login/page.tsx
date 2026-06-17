@@ -1,8 +1,8 @@
 "use client";
 
 import { Button, Card, CardBody, CardHeader } from "@heroui/react";
-import { FormEvent, Suspense, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useRef, useState } from "react";
 
 import { FormField } from "@/components/ui/form-field";
 import { PageShell } from "@/components/ui/page-shell";
@@ -64,51 +64,60 @@ function LoginForm() {
     <PageShell
       title="Đăng nhập"
       description="Đăng nhập để viết review, nhận gợi ý và dùng tính năng tài chính."
+      eyebrow="Auth"
+      variant="workspace"
     >
-      <Card className="auth-card" shadow="sm">
-        <CardHeader>
-          <h2>Chào mừng quay lại</h2>
-        </CardHeader>
-        <CardBody>
-          <form onSubmit={handleSubmit} className="section-stack">
-            <FormField
-              id="email"
-              name="email"
-              type="email"
-              label="Email"
-              autoComplete="email"
-              required
-              aria-describedby={error ? errorRegionId : undefined}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
+      <div className="auth-layout auth-layout-zip-first">
+        <aside className="auth-visual-panel glass-card" aria-label="Lợi ích khi đăng nhập">
+          <p className="eyebrow">Tài khoản StoryRec</p>
+          <h2>Đăng nhập để đồng bộ trải nghiệm cá nhân.</h2>
+          <p className="result-summary">Viết review, nhận gợi ý truyện và truy cập các workspace đã được bật cho tài khoản của bạn.</p>
+        </aside>
+        <Card className="auth-card glass-card" shadow="sm">
+          <CardHeader>
+            <h2>Chào mừng quay lại</h2>
+          </CardHeader>
+          <CardBody>
+            <form onSubmit={handleSubmit} className="section-stack">
+              <FormField
+                id="email"
+                name="email"
+                type="email"
+                label="Email"
+                autoComplete="email"
+                required
+                aria-describedby={error ? errorRegionId : undefined}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
 
-            <FormField
-              id="password"
-              name="password"
-              type="password"
-              label="Mật khẩu"
-              autoComplete="current-password"
-              required
-              aria-describedby={error ? errorRegionId : undefined}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+              <FormField
+                id="password"
+                name="password"
+                type="password"
+                label="Mật khẩu"
+                autoComplete="current-password"
+                required
+                aria-describedby={error ? errorRegionId : undefined}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
 
-            {registeredPending ? (
-              <StatusMessage tone="success">Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản.</StatusMessage>
-            ) : null}
+              {registeredPending ? (
+                <StatusMessage tone="success">Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản.</StatusMessage>
+              ) : null}
 
-            <div id={errorRegionId} ref={errorRegionRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
-              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-            </div>
+              <div id={errorRegionId} ref={errorRegionRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
+                {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+              </div>
 
-            <Button color="primary" type="submit" isLoading={isSubmitting}>
-              {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
+              <Button color="primary" type="submit" isLoading={isSubmitting}>
+                {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+      </div>
     </PageShell>
   );
 }
@@ -117,7 +126,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <PageShell title="Đăng nhập" description="Đang chuẩn bị trang đăng nhập.">
+        <PageShell title="Đăng nhập" description="Đang chuẩn bị trang đăng nhập." eyebrow="Auth" variant="workspace">
           <StatusMessage>Đang tải trang đăng nhập...</StatusMessage>
         </PageShell>
       }

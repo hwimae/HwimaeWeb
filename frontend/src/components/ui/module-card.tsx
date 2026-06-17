@@ -20,20 +20,22 @@ export function ModuleCard({
   status = "Sẵn sàng",
 }: ModuleCardProps) {
   return (
-    <Card as="article" className="module-card" shadow="sm">
+    <Card as="article" className="module-card glass-card" shadow="sm">
       <CardHeader className="module-card-header">
-        <Chip color="primary" variant="flat">
-          {label}
-        </Chip>
-        <Chip color={status === "Sẵn sàng" ? "success" : "warning"} variant="flat">
-          {status}
-        </Chip>
+        <div className="form-actions">
+          <Chip color="primary" variant="flat">
+            {label}
+          </Chip>
+          <Chip color={status === "Sẵn sàng" ? "success" : "warning"} variant="flat">
+            {status}
+          </Chip>
+        </div>
       </CardHeader>
-      <CardBody className="section-stack">
+      <CardBody className="section-stack module-card-body">
         <h2>{title}</h2>
         <p>{description}</p>
       </CardBody>
-      <CardFooter>
+      <CardFooter className="module-card-footer">
         <Link as={NextLink} href={href} color="primary" className="module-card-cta">
           {cta} →
         </Link>

@@ -42,7 +42,7 @@ export function BudgetInsights({ categories, totalSpent, totalBudget }: BudgetIn
   const alert = findBudgetAlert(categories);
 
   return (
-    <article className="card section-stack">
+    <article className="workspace-card section-stack">
       <header className="section-stack">
         <h2>Cảnh báo ngân sách</h2>
         <p>Theo dõi tổng mức sử dụng và các danh mục cần chú ý.</p>
