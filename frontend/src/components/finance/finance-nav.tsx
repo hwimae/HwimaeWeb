@@ -16,6 +16,17 @@ export const FINANCE_NAV_ITEMS = [
   { href: "/finance/groups", label: "Nhóm" },
 ] as const;
 
-export function FinanceNav() {
-  return <WorkspaceTabs ariaLabel="Điều hướng tài chính" items={[...FINANCE_NAV_ITEMS]} />;
+type FinanceNavProps = {
+  variant?: "default" | "rail";
+};
+
+export function FinanceNav({ variant = "default" }: FinanceNavProps) {
+  return (
+    <WorkspaceTabs
+      ariaLabel="Điều hướng tài chính"
+      items={[...FINANCE_NAV_ITEMS]}
+      orientation={variant === "rail" ? "vertical" : "horizontal"}
+      className={variant === "rail" ? "finance-nav finance-nav-rail" : "finance-nav"}
+    />
+  );
 }

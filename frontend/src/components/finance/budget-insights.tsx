@@ -40,41 +40,51 @@ function findBudgetAlert(categories: FinanceCategoryMetric[]): BudgetAlert | nul
 export function BudgetInsights({ categories, totalSpent, totalBudget }: BudgetInsightsProps) {
   const usagePercentage = calculatePercentage(totalSpent, totalBudget);
   const alert = findBudgetAlert(categories);
+  const alertClass = alert?.variant === "exceeded" ? "is-exceeded" : alert?.variant === "near-limit" ? "is-near-limit" : "is-safe";
 
   return (
-    <article className="workspace-card section-stack">
+    <article className="workspace-card section-stack finance-insights-card">
       <header className="section-stack">
+        <p className="eyebrow">Cảnh báo</p>
         <h2>Cảnh báo ngân sách</h2>
-        <p>Theo dõi tổng mức sử dụng và các danh mục cần chú ý.</p>
+        <p>Theo dõi mức sử dụng tổng và danh mục cần chú ý trước khi vượt hạn mức.</p>
       </header>
 
-      <section className="finance-insight-card" aria-label="Tổng mức sử dụng ngân sách">
-        <p className="eyebrow">Tổng mức sử dụng</p>
-        {totalBudget <= 0 ? (
-          <p>Chưa có ngân sách tổng để theo dõi.</p>
-        ) : (
+      <div className="finance-alert-list">
+        <section className="finance-budget-alert finance-budget-alert-total" aria-label="Tổng mức sử dụng ngân sách">
+          <div className="finance-alert-icon" aria-hidden="true" />
           <div className="section-stack">
-            <p className="finance-insight-value">{usagePercentage.toFixed(1)}% tổng ngân sách</p>
-            <p>
-              Đã chi {formatFinanceMoney(totalSpent)} / {formatFinanceMoney(totalBudget)}.
-            </p>
+            <p className="eyebrow">Tổng mức sử dụng</p>
+            {totalBudget <= 0 ? (
+              <p>Chưa có ngân sách tổng để theo dõi.</p>
+            ) : (
+              <>
+                <p className="finance-insight-value">{usagePercentage.toFixed(1)}% tổng ngân sách</p>
+                <p>
+                  Đã chi {formatFinanceMoney(totalSpent)} / {formatFinanceMoney(totalBudget)}.
+                </p>
+              </>
+            )}
           </div>
-        )}
-      </section>
+        </section>
 
-      <section className="finance-insight-card" aria-label="Danh mục cần chú ý">
-        <p className="eyebrow">Danh mục cần chú ý</p>
-        {alert ? (
+        <section className={`finance-budget-alert ${alertClass}`} aria-label="Danh mục cần chú ý">
+          <div className="finance-alert-icon" aria-hidden="true" />
           <div className="section-stack">
-            <p className="finance-insight-value">{alert.variant === "exceeded" ? "Vượt ngân sách" : "Gần vượt ngân sách"}</p>
-            <p>
-              {alert.category.name} đã dùng {alert.percentage.toFixed(0)}% ngân sách: {formatFinanceMoney(alert.category.spent)} / {formatFinanceMoney(alert.category.budget)}.
-            </p>
+            <p className="eyebrow">Danh mục cần chú ý</p>
+            {alert ? (
+              <>
+                <p className="finance-insight-value">{alert.variant === "exceeded" ? "Vượt ngân sách" : "Gần vượt ngân sách"}</p>
+                <p>
+                  {alert.category.name} đã dùng {alert.percentage.toFixed(0)}% ngân sách: {formatFinanceMoney(alert.category.spent)} / {formatFinanceMoney(alert.category.budget)}.
+                </p>
+              </>
+            ) : (
+              <p>Các danh mục vẫn trong ngưỡng an toàn.</p>
+            )}
           </div>
-        ) : (
-          <p>Các danh mục vẫn trong ngưỡng an toàn.</p>
-        )}
-      </section>
+        </section>
+      </div>
     </article>
   );
 }

@@ -121,5 +121,7 @@ Hiện chỉ có tài liệu mô tả định hướng, chưa có lệnh runtime
 ## Lưu ý khi phát triển
 
 - Repo hiện dùng ExpressJS cho backend (không phải NestJS).
+- Giao diện frontend sử dụng mặc định theo cấu trúc và cách tổ chức UI của Next.js hiện có trong repo.
+- Khi sửa giao diện, ưu tiên chỉnh trong thư mục `ui` để đồng bộ giao diện trên toàn bộ dự án.
 - Khi thay đổi API contract (auth/stories/reviews), cần cập nhật đồng bộ parser/type phía frontend để tránh lệch payload runtime.
 - Không chỉnh `backend/.env` thật nếu không được yêu cầu; chỉ cập nhật `.env.example` hoặc hướng dẫn cấu hình.

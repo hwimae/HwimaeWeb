@@ -15,6 +15,9 @@ describe("ExpenseChart", () => {
       />,
     );
 
+    expect(html).toContain("finance-chart-card");
+    expect(html).toContain("finance-chart-filter");
+    expect(html).toContain("Toàn bộ dữ liệu");
     expect(html).toContain("Biểu đồ chi tiêu");
     expect(html).toContain("Ăn uống");
     expect(html).toContain("Đi lại");

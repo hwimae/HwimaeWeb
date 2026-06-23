@@ -23,6 +23,9 @@ describe("BudgetInsights", () => {
       />,
     );
 
+    expect(html).toContain("finance-alert-list");
+    expect(html).toContain("finance-budget-alert");
+    expect(html).toContain("is-exceeded");
     expect(html).toContain("Vượt ngân sách");
     expect(html).toContain("Ăn uống");
   });

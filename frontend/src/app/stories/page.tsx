@@ -1,18 +1,21 @@
-import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
+import React from "react";
+import { Button } from "@heroui/react";
 import Link from "next/link";
 
-import { StoryWorkspaceNav } from "@/components/stories/story-workspace-nav";
-import { StoryListControls } from "@/components/story-list-controls";
-import { MetricPill } from "@/components/ui/metric-pill";
-import { PageShell } from "@/components/ui/page-shell";
-import { PageState } from "@/components/ui/page-state";
-import { StatusMessage } from "@/components/ui/status-message";
-import { apiGet } from "@/lib/api";
+import { StoryListControls } from "../../components/story-list-controls";
+import { StoryCatalogCard } from "../../components/stories/story-catalog-card";
+import { StoryPagination } from "../../components/stories/story-pagination";
+import { StoryRecommendationShowcase } from "../../components/stories/story-recommendation-showcase";
+import { StoryWorkspaceNav } from "../../components/stories/story-workspace-nav";
+import { PageShell } from "../../components/ui/page-shell";
+import { PageState } from "../../components/ui/page-state";
+import { StatusMessage } from "../../components/ui/status-message";
+import { apiGet } from "../../lib/api";
 import {
   parseRecommendationsResponse,
   type RecommendationsResponse,
-} from "@/types/recommendation";
-import { parsePaginatedStories, type PaginatedStories } from "@/types/story";
+} from "../../types/recommendation";
+import { parsePaginatedStories, type PaginatedStories } from "../../types/story";
 
 type StoriesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -127,144 +130,93 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
   return (
     <PageShell
       title="Truyện"
-      description="Khám phá truyện chữ, đọc nội dung đã nhập và viết review để nhận gợi ý phù hợp."
+      description="Khám phá, đọc và lưu trữ những câu chuyện tuyệt vời với không gian truyện mới."
       eyebrow="Story workspace"
       variant="workspace"
     >
-      <div className="section-stack">
+      <div className="story-workspace-layout">
         <StoryWorkspaceNav />
 
-        <section className="workspace-card section-stack story-feature-surface" aria-label="Khám phá truyện">
-          <div className="section-heading-row">
-            <div className="section-stack">
-              <p className="eyebrow">Truyện · Sáng tác & khám phá</p>
+        <div className="story-workspace-main section-stack">
+          <section className="story-feature-hero workspace-card" aria-label="Khám phá truyện">
+            <div className="story-feature-copy section-stack">
+              <p className="eyebrow">Truyện · Sáng tác &amp; khám phá</p>
               <h2>Khám phá thế giới truyện</h2>
               <p className="result-summary">
-                Tìm kiếm, đọc và lưu trữ những câu chuyện tuyệt vời từ dữ liệu đã nhập.
+                Tìm kiếm, đọc và lưu trữ những câu chuyện tuyệt vời nhất. Trải nghiệm không gian kể chuyện thư giãn với sự hỗ trợ của AI.
               </p>
-            </div>
-            <div className="page-header-actions">
-              <Button as={Link} href="/recommendations" color="primary">
-                AI tư vấn
-              </Button>
-              <Button as={Link} href="/login" color="primary" variant="flat">
-                Đăng nhập
-              </Button>
-              <Button as={Link} href="/register" color="primary" variant="flat">
-                Đăng ký
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="section-stack">
-          <div className="section-heading-row">
-            <div className="section-stack">
-              <p className="eyebrow">Nổi bật</p>
-              <h2>Gợi ý truyện phổ biến</h2>
-              <p className="result-summary">Các truyện được xếp hạng theo rating và số lượng review từ người dùng app.</p>
-            </div>
-          </div>
-          {recommendationsHasError ? (
-            <StatusMessage tone="error">Không thể tải gợi ý truyện lúc này.</StatusMessage>
-          ) : null}
-          {recommendations.items.length === 0 ? (
-            <PageState
-              tone="empty"
-              title="Chưa có đủ gợi ý từ cộng đồng"
-              description="Hãy thêm review hoặc quay lại sau khi có thêm dữ liệu từ người dùng app."
-              cta={<Link href="/recommendations">Mở AI tư vấn</Link>}
-            />
-          ) : (
-            <div className="story-grid">
-              {recommendations.items.map((item) => (
-                <Link key={item.storyId} href={`/stories/${item.storyId}`} className="story-card recommendation-card">
-                  <div className="form-actions">
-                    <Chip color="primary" variant="flat">
-                      {item.category}
-                    </Chip>
-                    <MetricPill label="Score" value={item.score.toFixed(2)} tone="success" />
-                  </div>
-                  <h3 className="story-title">{item.title}</h3>
-                  <p className="story-meta">Tác giả: {item.authors}</p>
-                  <MetricPill label="Rating" value={`${item.averageRating.toFixed(1)} · ${item.reviewCount} review`} />
-                  <p className="recommendation-reason">{item.reason}</p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="section-stack">
-          <div className="section-heading-row">
-            <div className="section-stack">
-              <p className="eyebrow">Thư viện truyện</p>
-              <h2>Truyện mới nhập</h2>
-            </div>
-          </div>
-          <StoryListControls query={params.query} hasContent={params.hasContent} />
-          <p className="result-summary">
-            Tìm thấy {stories.total} truyện{params.hasContent ? " có nội dung đọc" : ""}.
-          </p>
-          {hasError ? (
-            <StatusMessage tone="error">
-              Không thể tải danh sách truyện lúc này. Đang hiển thị danh sách rỗng tạm thời.
-            </StatusMessage>
-          ) : null}
-          {stories.items.length === 0 ? (
-            <PageState
-              tone="empty"
-              title="Chưa có truyện phù hợp"
-              description="Hãy đổi từ khóa tìm kiếm hoặc bỏ bộ lọc nội dung đọc để xem thêm kết quả."
-            />
-          ) : (
-            <>
-              <div className="story-grid">
-                {stories.items.map((story) => (
-                  <Link key={story.id} href={`/stories/${story.id}`} className="story-card">
-                    <div className="form-actions">
-                      <Chip color="primary" variant="flat">
-                        {story.category}
-                      </Chip>
-                      {story.hasContent ? (
-                        <Chip color="success" variant="flat">
-                          Có nội dung
-                        </Chip>
-                      ) : null}
-                    </div>
-                    <h3 className="story-title">{story.title}</h3>
-                    <p className="story-meta">Tác giả: {story.authors}</p>
-                    <MetricPill label="Rating" value={`${story.userAverageRating.toFixed(1)} · ${story.userReviewCount} review`} />
-                    {story.currentPrice !== null ? <p className="story-meta">Giá: {story.currentPrice}</p> : null}
-                  </Link>
-                ))}
+              <div className="page-header-actions">
+                <Button as={Link} href="/recommendations" color="primary">
+                  AI tư vấn
+                </Button>
+                <Button as={Link} href="/login" color="primary" variant="flat">
+                  Đăng nhập
+                </Button>
+                <Button as={Link} href="/register" color="primary" variant="flat">
+                  Đăng ký
+                </Button>
               </div>
-              <nav className="pagination" aria-label="Phân trang danh sách truyện">
-                {stories.page > 1 ? (
-                  <Button as={Link} href={buildPageHref(params, stories.page - 1)} color="primary" variant="flat">
-                    Trước
-                  </Button>
-                ) : (
-                  <Button isDisabled color="primary" variant="flat">
-                    Trước
-                  </Button>
-                )}
-                <span>
-                  Trang {stories.page} / {totalPages}
-                </span>
-                {stories.page < totalPages ? (
-                  <Button as={Link} href={buildPageHref(params, stories.page + 1)} color="primary" variant="flat">
-                    Sau
-                  </Button>
-                ) : (
-                  <Button isDisabled color="primary" variant="flat">
-                    Sau
-                  </Button>
-                )}
-              </nav>
-            </>
-          )}
-        </section>
+            </div>
+            <div className="story-feature-visual" aria-hidden="true" />
+          </section>
+
+          <section className="section-stack" aria-labelledby="story-popular-heading">
+            <div className="section-heading-row">
+              <div className="section-stack">
+                <p className="eyebrow">Nổi bật</p>
+                <h2 id="story-popular-heading">Gợi ý truyện phổ biến</h2>
+              </div>
+            </div>
+            {recommendationsHasError ? <StatusMessage tone="error">Không thể tải gợi ý truyện lúc này.</StatusMessage> : null}
+            {recommendations.items.length === 0 ? (
+              <PageState
+                tone="empty"
+                title="Chưa có đủ gợi ý từ cộng đồng"
+                description="Hãy thêm review hoặc quay lại sau khi có thêm dữ liệu từ người dùng app."
+                cta={<Link href="/recommendations">Mở AI tư vấn</Link>}
+              />
+            ) : (
+              <StoryRecommendationShowcase items={recommendations.items} />
+            )}
+          </section>
+
+          <section className="section-stack" aria-labelledby="story-catalog-heading">
+            <div className="story-catalog-header">
+              <div className="section-stack">
+                <p className="eyebrow">Thư viện truyện</p>
+                <h2 id="story-catalog-heading">Truyện mới cập nhật</h2>
+                <p className="result-summary">
+                  Tìm thấy {stories.total} truyện{params.hasContent ? " có nội dung đọc" : ""}.
+                </p>
+              </div>
+              <StoryListControls query={params.query} hasContent={params.hasContent} />
+            </div>
+
+            {hasError ? (
+              <StatusMessage tone="error">Không thể tải danh sách truyện lúc này. Đang hiển thị danh sách rỗng tạm thời.</StatusMessage>
+            ) : null}
+            {stories.items.length === 0 ? (
+              <PageState
+                tone="empty"
+                title="Chưa có truyện phù hợp"
+                description="Hãy đổi từ khóa tìm kiếm hoặc bỏ bộ lọc nội dung đọc để xem thêm kết quả."
+              />
+            ) : (
+              <>
+                <div className="story-catalog-grid">
+                  {stories.items.map((story) => (
+                    <StoryCatalogCard key={story.id} story={story} />
+                  ))}
+                </div>
+                <StoryPagination
+                  currentPage={stories.page}
+                  totalPages={totalPages}
+                  buildHref={(page) => buildPageHref(params, page)}
+                />
+              </>
+            )}
+          </section>
+        </div>
       </div>
     </PageShell>
   );

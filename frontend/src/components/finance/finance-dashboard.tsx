@@ -1,12 +1,13 @@
 "use client";
 
+import { Button } from "@heroui/react";
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 import { StatusMessage } from "../ui/status-message";
 import { getFinanceCategories, getFinanceSpendingSummary, listFinanceBudgets, listFinanceExpenses } from "../../lib/finance-api";
 import type { FinanceBudget, FinanceCategory, FinanceExpense, SpendingSummary } from "../../types/finance";
 import { BudgetInsights } from "./budget-insights";
-import { BudgetUsageChart } from "./budget-usage-chart";
 import { CategoryCard } from "./category-card";
 import { buildFinanceCategoryMetrics } from "./finance-dashboard-data";
 import { ExpenseChart } from "./expense-chart";
@@ -22,8 +23,28 @@ type DashboardState = {
   error: string | null;
 };
 
+type FinanceStatCardProps = {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "spending" | "budget" | "remaining" | "usage";
+};
+
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+function FinanceStatCard({ label, value, detail, tone }: FinanceStatCardProps) {
+  return (
+    <article className={`finance-stat-card finance-stat-card-${tone}`}>
+      <div className="finance-stat-icon" aria-hidden="true" />
+      <div>
+        <p className="finance-stat-label">{label}</p>
+        <p className="finance-stat-value">{value}</p>
+        <p className="finance-stat-detail">{detail}</p>
+      </div>
+    </article>
+  );
 }
 
 export function FinanceDashboard() {
@@ -79,12 +100,27 @@ export function FinanceDashboard() {
   const totalBudget = categoriesWithBudget.reduce((sum, category) => sum + category.budget, 0);
   const remaining = Math.max(totalBudget - totalSpent, 0);
   const usagePercentage = calculatePercentage(totalSpent, totalBudget);
+  const budgetedCategoryCount = categoriesWithBudget.filter((category) => category.budget > 0).length;
 
   return (
-    <section className="section-stack">
-      <header className="workspace-card section-stack">
-        <h2>Dashboard tài chính</h2>
-        <p>Theo dõi tổng quan chi tiêu, ngân sách và các danh mục đang sử dụng.</p>
+    <section className="section-stack finance-dashboard">
+      <header className="workspace-card finance-dashboard-hero">
+        <div className="section-stack">
+          <p className="eyebrow">Tài chính · Dashboard cá nhân</p>
+          <h2>Tổng quan Tài chính</h2>
+          <p className="result-summary">
+            Theo dõi toàn bộ dữ liệu đã ghi nhận về chi tiêu, ngân sách và cảnh báo danh mục trong một không gian xanh biển nhẹ, rõ ràng và dễ quét mỗi ngày.
+          </p>
+          <div className="page-header-actions">
+            <Button as={Link} href="/finance/expenses" color="primary">
+              Thêm giao dịch
+            </Button>
+            <Button as={Link} href="/finance/chat" color="primary" variant="flat">
+              Hỏi AI tài chính
+            </Button>
+          </div>
+        </div>
+        <div className="finance-dashboard-hero-orb" aria-hidden="true" />
       </header>
 
       {state.isLoading ? <StatusMessage>Đang tải dữ liệu tài chính...</StatusMessage> : null}
@@ -92,45 +128,29 @@ export function FinanceDashboard() {
 
       {!state.isLoading && !state.error ? (
         <>
-          <section className="workspace-card section-stack" aria-label="Tổng quan ngân sách">
-            <h3>Tổng quan</h3>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Chỉ số</th>
-                    <th scope="col">Giá trị</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">Tổng chi tiêu</th>
-                    <td>{formatFinanceMoney(totalSpent)}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Tổng ngân sách</th>
-                    <td>{formatFinanceMoney(totalBudget)}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Còn lại</th>
-                    <td>{formatFinanceMoney(remaining)}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Mức sử dụng</th>
-                    <td>{usagePercentage.toFixed(1)}%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <BudgetUsageChart label="Mức sử dụng tổng ngân sách" spent={totalSpent} budget={totalBudget} />
+          <section className="finance-stat-grid" aria-label="Tổng quan ngân sách">
+            <FinanceStatCard label="Tổng chi tiêu" value={formatFinanceMoney(totalSpent)} detail="Toàn bộ dữ liệu đã ghi nhận" tone="spending" />
+            <FinanceStatCard label="Tổng ngân sách" value={formatFinanceMoney(totalBudget)} detail={`${budgetedCategoryCount} danh mục có hạn mức`} tone="budget" />
+            <FinanceStatCard label="Còn lại" value={formatFinanceMoney(remaining)} detail="Phần ngân sách chưa sử dụng" tone="remaining" />
+            <FinanceStatCard label="Mức sử dụng" value={`${usagePercentage.toFixed(1)}%`} detail="So với tổng ngân sách" tone="usage" />
+          </section>
+
+          <section className="finance-chart-grid" aria-label="Biểu đồ và cảnh báo ngân sách">
+            <ExpenseChart categories={categoriesWithBudget} />
+            <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} />
           </section>
 
           <section className="section-stack" aria-label="Danh mục chi tiêu">
-            <h3>Theo danh mục</h3>
+            <div className="section-heading-row">
+              <div className="section-stack">
+                <p className="eyebrow">Theo danh mục</p>
+                <h3>Danh mục chi tiêu</h3>
+              </div>
+            </div>
             {categoriesWithBudget.length === 0 ? (
               <StatusMessage>Chưa có danh mục hoặc ngân sách để hiển thị.</StatusMessage>
             ) : (
-              <div className="card-grid">
+              <div className="card-grid finance-category-grid">
                 {categoriesWithBudget.map((category) => (
                   <CategoryCard key={category.id} category={category} />
                 ))}
@@ -138,10 +158,6 @@ export function FinanceDashboard() {
             )}
           </section>
 
-          <section className="finance-chart-grid" aria-label="Biểu đồ và cảnh báo ngân sách">
-            <ExpenseChart categories={categoriesWithBudget} />
-            <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} />
-          </section>
           <RecentTransactions expenses={state.expenses} categories={state.categories} />
         </>
       ) : null}

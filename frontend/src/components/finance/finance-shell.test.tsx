@@ -1,24 +1,47 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("next/navigation", () => ({
-  usePathname: () => "/finance/dashboard",
-}));
+async function renderShellAtPath(pathname: string, content: string) {
+  vi.resetModules();
+  vi.doMock("next/navigation", () => ({
+    usePathname: () => pathname,
+  }));
 
-import { FinanceShell } from "./finance-shell";
+  const { FinanceShell } = await import("./finance-shell");
+
+  return renderToStaticMarkup(
+    <FinanceShell>
+      <section>
+        <p>{content}</p>
+      </section>
+    </FinanceShell>,
+  );
+}
 
 describe("FinanceShell", () => {
-  it("renders the finance workspace intro and nav surface", () => {
-    const html = renderToStaticMarkup(
-      <FinanceShell>
-        <section><p>Nội dung dashboard</p></section>
-      </FinanceShell>,
-    );
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("renders the finance workspace intro and nav surface for default finance routes", async () => {
+    const html = await renderShellAtPath("/finance/dashboard", "Nội dung dashboard");
 
     expect(html).toContain("Tài chính cá nhân");
     expect(html).toContain("Điều hướng tài chính");
     expect(html).toContain("Khu tài chính");
     expect(html).toContain("Nội dung dashboard");
+    expect(html).not.toContain("finance-shell-layout");
+  });
+
+  it("renders a sidebar shell for the finance groups route", async () => {
+    const html = await renderShellAtPath("/finance/groups", "Nội dung nhóm");
+
+    expect(html).toContain("finance-shell-layout");
+    expect(html).toContain("finance-shell-sidebar");
+    expect(html).toContain("finance-shell-main");
+    expect(html).toContain("finance-nav-rail");
+    expect(html).toContain("Nội dung nhóm");
   });
 });
