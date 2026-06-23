@@ -15,9 +15,11 @@ describe("StoryWorkspaceNav", () => {
     mockedPathname = "/stories";
   });
 
-  it("renders story workspace links", () => {
+  it("renders desktop sidebar and mobile tab navigation from the same story nav items", () => {
     const html = renderToStaticMarkup(<StoryWorkspaceNav />);
 
+    expect(html).toContain("story-workspace-nav-sidebar");
+    expect(html).toContain("story-workspace-nav-mobile");
     expect(html).toContain('href="/stories"');
     expect(html).toContain('href="/recommendations"');
     expect(html).toContain("Danh sách truyện");

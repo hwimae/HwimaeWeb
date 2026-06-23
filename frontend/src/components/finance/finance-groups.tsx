@@ -238,19 +238,43 @@ export function FinanceGroups() {
   }
 
   return (
-    <section className="section-stack">
-      {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}
-      {state.message ? <StatusMessage tone="success">{state.message}</StatusMessage> : null}
-      <div className="finance-chart-grid">
-        <FinanceGroupsPanel groups={state.groups} selectedGroupId={state.selectedGroup?.id ?? null} isLoading={state.isLoading} onSelectGroup={selectGroup} onCreateGroup={createGroup} />
-        <div className="section-stack">
-          {state.isLoadingGroupDetail ? <StatusMessage>Đang tải chi tiết nhóm tài chính...</StatusMessage> : null}
-          {state.selectedGroup && !state.isLoadingGroupDetail ? <FinanceGroupDetailView group={state.selectedGroup} onAddMember={addMember} onDeleteMember={removeMember} onDeleteGroup={removeGroup} /> : null}
-          {state.selectedGroup && !state.isLoadingGroupDetail ? <FinanceMemberSelector members={state.selectedGroup.members} selectedMemberUserId={state.selectedMemberUserId} onSelectMember={selectMember} /> : null}
-          {state.selectedGroup && state.isLoadingDashboard ? <StatusMessage>Đang tải nội dung Finance của thành viên...</StatusMessage> : null}
-          {state.selectedGroup && !state.dashboard && !state.isLoadingDashboard ? <StatusMessage>Chọn tên một thành viên để xem nội dung Finance của người đó.</StatusMessage> : null}
-          {state.dashboard ? <FinanceMemberDashboard dashboard={state.dashboard} canDelete={state.selectedGroup?.currentUserRole === "OWNER"} onDeleteExpense={deleteExpense} onDeleteBudget={deleteBudget} /> : null}
+    <section className="finance-groups-layout" aria-label="Workspace nhóm tài chính">
+      {state.error || state.message ? (
+        <div className="finance-groups-status-stack">
+          {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}
+          {state.message ? <StatusMessage tone="success">{state.message}</StatusMessage> : null}
         </div>
+      ) : null}
+
+      <FinanceGroupsPanel groups={state.groups} selectedGroupId={state.selectedGroup?.id ?? null} isLoading={state.isLoading} onSelectGroup={selectGroup} onCreateGroup={createGroup} />
+
+      <div className="finance-groups-main section-stack">
+        {state.isLoadingGroupDetail ? (
+          <section className="workspace-card section-stack">
+            <StatusMessage>Đang tải chi tiết nhóm tài chính...</StatusMessage>
+          </section>
+        ) : null}
+
+        {state.selectedGroup && !state.isLoadingGroupDetail ? (
+          <>
+            <FinanceGroupDetailView group={state.selectedGroup} onAddMember={addMember} onDeleteMember={removeMember} onDeleteGroup={removeGroup} />
+            <FinanceMemberSelector members={state.selectedGroup.members} selectedMemberUserId={state.selectedMemberUserId} onSelectMember={selectMember} />
+          </>
+        ) : null}
+
+        {state.selectedGroup && state.isLoadingDashboard ? (
+          <section className="workspace-card section-stack">
+            <StatusMessage>Đang tải nội dung Finance của thành viên...</StatusMessage>
+          </section>
+        ) : null}
+
+        {state.selectedGroup && !state.dashboard && !state.isLoadingDashboard ? (
+          <section className="workspace-card section-stack">
+            <StatusMessage>Chọn tên một thành viên để xem nội dung Finance của người đó.</StatusMessage>
+          </section>
+        ) : null}
+
+        {state.dashboard ? <FinanceMemberDashboard dashboard={state.dashboard} canDelete={state.selectedGroup?.currentUserRole === "OWNER"} onDeleteExpense={deleteExpense} onDeleteBudget={deleteBudget} /> : null}
       </div>
     </section>
   );

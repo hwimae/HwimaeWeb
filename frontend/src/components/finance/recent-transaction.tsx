@@ -20,42 +20,40 @@ export function RecentTransactions({ expenses, categories }: RecentTransactionsP
     .slice(0, 10);
 
   return (
-    <Card as="article" className="section-stack glass-card" shadow="sm">
+    <Card as="article" className="section-stack glass-card finance-transactions-card" shadow="sm">
       <CardBody className="section-stack">
-        <header className="section-stack">
-          <h2>Giao dịch gần đây</h2>
-          <p>10 khoản chi mới nhất đã được ghi nhận.</p>
+        <header className="section-heading-row">
+          <div className="section-stack">
+            <p className="eyebrow">Giao dịch</p>
+            <h2>Giao dịch gần đây</h2>
+            <p>10 khoản chi mới nhất đã được ghi nhận.</p>
+          </div>
         </header>
 
         {recentExpenses.length === 0 ? (
           <p>Chưa có giao dịch nào.</p>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Nơi chi</th>
-                  <th scope="col">Danh mục</th>
-                  <th scope="col">Ngày</th>
-                  <th scope="col">Số tiền</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentExpenses.map((expense) => {
-                  const category = expense.category ?? (expense.categoryId ? categoryMap[expense.categoryId] : undefined);
+          <ul className="finance-transaction-list">
+            {recentExpenses.map((expense) => {
+              const category = expense.category ?? (expense.categoryId ? categoryMap[expense.categoryId] : undefined);
+              const merchantName = expense.merchantName || expense.description || "Không rõ";
 
-                  return (
-                    <tr key={expense.id}>
-                      <td>{expense.merchantName || expense.description || "Không rõ"}</td>
-                      <td>{category?.name || "Khác"}</td>
-                      <td>{formatFinanceDate(expense.spentAt)}</td>
-                      <td>{formatFinanceMoney(expense.amount)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              return (
+                <li key={expense.id} className="finance-transaction-row">
+                  <div className="finance-transaction-avatar" style={{ backgroundColor: category?.color ?? undefined }} aria-hidden="true">
+                    {category?.icon || merchantName.slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="finance-transaction-main">
+                    <h3>{merchantName}</h3>
+                    <p>
+                      {formatFinanceDate(expense.spentAt)} · {category?.name || "Khác"}
+                    </p>
+                  </div>
+                  <strong className="finance-transaction-amount">-{formatFinanceMoney(expense.amount)}</strong>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </CardBody>
     </Card>

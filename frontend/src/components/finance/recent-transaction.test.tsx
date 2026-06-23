@@ -15,8 +15,16 @@ describe("RecentTransactions", () => {
       />,
     );
 
+    expect(html).toContain("finance-transaction-list");
+    expect(html).toContain("finance-transaction-row");
+    expect(html).toContain("<ul");
+    expect(html).toContain("<li");
     expect(html).toContain("Giao dịch gần đây");
     expect(html).toContain("Highlands");
     expect(html).toContain("Ăn uống");
+    expect(html).toContain("-25.000");
+    const tableTag = ["<", "table"].join("");
+
+    expect(html).not.toContain(tableTag);
   });
 });

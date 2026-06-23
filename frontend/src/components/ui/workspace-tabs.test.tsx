@@ -26,4 +26,22 @@ describe("WorkspaceTabs", () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain("workspace-nav-link");
   });
+
+  it("renders a vertical workspace tab rail when requested", () => {
+    const html = renderToStaticMarkup(
+      <WorkspaceTabs
+        ariaLabel="Điều hướng dọc"
+        orientation="vertical"
+        className="finance-nav-rail"
+        items={[
+          { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/groups", label: "Nhóm" },
+        ]}
+      />,
+    );
+
+    expect(html).toContain('aria-label="Điều hướng dọc"');
+    expect(html).toContain("workspace-tabs-vertical");
+    expect(html).toContain("finance-nav-rail");
+  });
 });

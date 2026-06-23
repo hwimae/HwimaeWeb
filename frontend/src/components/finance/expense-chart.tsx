@@ -40,10 +40,14 @@ export function ExpenseChart({ categories }: ExpenseChartProps) {
   }));
 
   return (
-    <article className="workspace-card section-stack">
-      <header className="section-stack">
-        <h2>Biểu đồ chi tiêu</h2>
-        <p>So sánh chi tiêu hiện tại với ngân sách của từng danh mục.</p>
+    <article className="workspace-card section-stack finance-chart-card">
+      <header className="finance-chart-header">
+        <div className="section-stack">
+          <p className="eyebrow">Biểu đồ</p>
+          <h2>Biểu đồ chi tiêu</h2>
+          <p>So sánh chi tiêu hiện tại với ngân sách của từng danh mục.</p>
+        </div>
+        <span className="finance-chart-filter">Toàn bộ dữ liệu</span>
       </header>
 
       {categories.length === 0 ? (

@@ -29,4 +29,12 @@ describe("FinanceNav", () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain("workspace-nav-link");
   });
+
+  it("renders the rail variant for finance groups shells", () => {
+    const html = renderToStaticMarkup(<FinanceNav variant="rail" />);
+
+    expect(html).toContain("finance-nav-rail");
+    expect(html).toContain("workspace-tabs-vertical");
+    expect(html).toContain('href="/finance/groups"');
+  });
 });

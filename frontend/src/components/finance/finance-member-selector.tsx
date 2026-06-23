@@ -13,17 +13,26 @@ type FinanceMemberSelectorProps = {
 
 export function FinanceMemberSelector({ members, selectedMemberUserId, onSelectMember }: FinanceMemberSelectorProps) {
   return (
-    <section className="workspace-card section-stack" aria-label="Chọn thành viên để xem Finance">
-      <h3>Thành viên</h3>
-      <ul className="app-nav" aria-label="Danh sách thành viên nhóm">
+    <section className="workspace-card section-stack finance-member-selector-card" aria-label="Chọn thành viên để xem Finance">
+      <div className="section-stack">
+        <h3>Chọn thành viên để xem</h3>
+        <p>Bạn đang mở dashboard tài chính cá nhân của từng thành viên ngay trong cùng một nhóm.</p>
+      </div>
+      <div className="finance-member-selector-list" aria-label="Danh sách thành viên nhóm">
         {members.map((member) => (
-          <li key={member.userId}>
-            <Button type="button" color="primary" variant={selectedMemberUserId === member.userId ? "solid" : "flat"} onPress={() => onSelectMember(member.userId)}>
-              {member.name}
-            </Button>
-          </li>
+          <Button
+            key={member.userId}
+            type="button"
+            color="primary"
+            variant={selectedMemberUserId === member.userId ? "solid" : "flat"}
+            className="finance-member-selector-item"
+            aria-pressed={selectedMemberUserId === member.userId}
+            onPress={() => onSelectMember(member.userId)}
+          >
+            {member.name}
+          </Button>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }

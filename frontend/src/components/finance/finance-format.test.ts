@@ -7,8 +7,9 @@ describe("finance format helpers", () => {
     expect(formatFinanceMoney(25000)).toBe("25.000 ₫");
   });
 
-  it("formats ISO date for Vietnamese users", () => {
+  it("formats ISO date in the Vietnam timezone used by the finance workspace", () => {
     expect(formatFinanceDate("2026-06-10T00:00:00.000Z")).toBe("10/06/2026");
+    expect(formatFinanceDate("2026-06-20T17:30:00.000Z")).toBe("21/06/2026");
   });
 
   it("calculates budget usage percentage", () => {

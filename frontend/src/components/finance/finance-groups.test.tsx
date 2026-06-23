@@ -33,15 +33,35 @@ describe("Finance Groups UI", () => {
   it("renders empty groups panel", () => {
     const html = renderToStaticMarkup(<FinanceGroupsPanel groups={[]} selectedGroupId={null} isLoading={false} onSelectGroup={() => undefined} onCreateGroup={() => true} />);
 
+    expect(html).toContain("Tạo nhóm mới");
+    expect(html).toContain("Danh sách nhóm");
     expect(html).toContain("Bạn chưa tham gia nhóm tài chính nào");
     expect(html).toContain("Tạo nhóm đầu tiên");
   });
 
-  it("renders member names as selector buttons", () => {
-    const html = renderToStaticMarkup(<FinanceMemberSelector members={group.members} selectedMemberUserId="user-2" onSelectMember={() => undefined} />);
+  it("renders selected group metadata in the list", () => {
+    const html = renderToStaticMarkup(
+      <FinanceGroupsPanel groups={[group]} selectedGroupId="group-1" isLoading={false} onSelectGroup={() => undefined} onCreateGroup={() => true} />,
+    );
 
-    expect(html).toContain("Boo");
-    expect(html).toContain("An");
+    expect(html).toContain("Gia đình");
+    expect(html).toContain("Chủ nhóm · 2 thành viên");
+    expect(html).toContain('aria-pressed="true"');
+  });
+
+  it("renders a structured group summary and member chooser", () => {
+    const detailHtml = renderToStaticMarkup(
+      <FinanceGroupDetailView group={group} onAddMember={() => true} onDeleteMember={() => undefined} onDeleteGroup={() => undefined} />,
+    );
+    const selectorHtml = renderToStaticMarkup(
+      <FinanceMemberSelector members={group.members} selectedMemberUserId="user-2" onSelectMember={() => undefined} />,
+    );
+
+    expect(detailHtml).toContain("Chi tiết nhóm");
+    expect(detailHtml).toContain("2 thành viên");
+    expect(selectorHtml).toContain("Chọn thành viên để xem");
+    expect(selectorHtml).toContain("An");
+    expect(selectorHtml).toContain('aria-pressed="true"');
   });
 
   it("shows owner-only controls for owner", () => {
@@ -49,6 +69,7 @@ describe("Finance Groups UI", () => {
 
     expect(html).toContain("Thêm thành viên");
     expect(html).toContain("Xóa nhóm");
+    expect(html).toContain("Xóa thành viên");
   });
 
   it("hides owner-only controls for member", () => {

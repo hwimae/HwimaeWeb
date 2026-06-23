@@ -24,25 +24,35 @@ export function FinanceGroupDetailView({ group, onAddMember, onDeleteMember, onD
   }
 
   return (
-    <section className="workspace-card section-stack" aria-label="Chi tiết nhóm tài chính">
-      <h2>{group.name}</h2>
-      <p>
-        {group.memberCount} thành viên · {isOwner ? "Bạn là chủ nhóm" : "Bạn là thành viên"}
-      </p>
-      <ul>
+    <section className="workspace-card section-stack finance-group-detail-card" aria-label="Chi tiết nhóm tài chính">
+      <div className="section-stack">
+        <p className="eyebrow">Chi tiết nhóm</p>
+        <h2>{group.name}</h2>
+        <p>
+          {group.memberCount} thành viên · {isOwner ? "Bạn là chủ nhóm" : "Bạn là thành viên"}
+        </p>
+      </div>
+
+      <ul className="finance-group-member-list" aria-label="Thành viên trong nhóm">
         {group.members.map((member) => (
-          <li key={member.userId}>
-            {member.name} ({member.email}) · {member.role === "OWNER" ? "Chủ nhóm" : "Thành viên"}
+          <li key={member.userId} className="finance-group-member-item">
+            <div className="section-stack finance-group-member-copy">
+              <strong>{member.name}</strong>
+              <p>
+                {member.email} · {member.role === "OWNER" ? "Chủ nhóm" : "Thành viên"}
+              </p>
+            </div>
             {isOwner && member.role !== "OWNER" ? (
               <button type="button" aria-label={`Xóa thành viên ${member.name}`} onClick={() => onDeleteMember(member.userId)}>
-                Xóa thành viên {member.name}
+                Xóa thành viên
               </button>
             ) : null}
           </li>
         ))}
       </ul>
+
       {isOwner ? (
-        <>
+        <div className="section-stack finance-group-owner-actions">
           <form className="section-stack" onSubmit={handleSubmit}>
             <label className="form-field" htmlFor="finance-group-member-email">
               <span>Email thành viên</span>
@@ -53,7 +63,7 @@ export function FinanceGroupDetailView({ group, onAddMember, onDeleteMember, onD
           <button type="button" onClick={onDeleteGroup}>
             Xóa nhóm
           </button>
-        </>
+        </div>
       ) : null}
     </section>
   );

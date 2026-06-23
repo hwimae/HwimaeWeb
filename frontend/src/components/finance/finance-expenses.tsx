@@ -5,7 +5,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { StatusMessage } from "../ui/status-message";
 import { createFinanceExpense, getFinanceCategories, listFinanceExpenses } from "../../lib/finance-api";
 import type { FinanceCategory, FinanceExpense } from "../../types/finance";
-import { formatFinanceDate, formatFinanceMoney } from "./finance-format";
+import { FinanceExpensesContent, type FinanceExpenseDraft } from "./finance-expenses-content";
+import { buildFinanceExpenseHighlights } from "./finance-expenses-summary";
 
 type ExpensesState = {
   categories: FinanceCategory[];
@@ -14,15 +15,7 @@ type ExpensesState = {
   error: string | null;
 };
 
-type ExpenseDraft = {
-  merchantName: string;
-  description: string;
-  amount: string;
-  categoryId: string;
-  spentAt: string;
-};
-
-const EMPTY_DRAFT: ExpenseDraft = {
+const EMPTY_DRAFT: FinanceExpenseDraft = {
   merchantName: "",
   description: "",
   amount: "",
@@ -44,7 +37,7 @@ export function FinanceExpenses() {
   const mountedRef = useRef(true);
   const submitAbortRef = useRef<AbortController | null>(null);
   const [state, setState] = useState<ExpensesState>({ categories: [], expenses: [], isLoading: true, error: null });
-  const [draft, setDraft] = useState<ExpenseDraft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<FinanceExpenseDraft>(EMPTY_DRAFT);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
@@ -84,14 +77,6 @@ export function FinanceExpenses() {
       controller.abort();
     };
   }, []);
-
-  const categoryMap = state.categories.reduce<Record<string, FinanceCategory>>((acc, category) => {
-    acc[category.id] = category;
-    return acc;
-  }, {});
-
-  const expenses = [...state.expenses].sort((a, b) => new Date(b.spentAt ?? 0).getTime() - new Date(a.spentAt ?? 0).getTime());
-  const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,99 +122,28 @@ export function FinanceExpenses() {
     }
   }
 
+  if (state.isLoading) {
+    return (
+      <section className="section-stack finance-expenses-loading">
+        <StatusMessage>Đang tải chi tiêu...</StatusMessage>
+      </section>
+    );
+  }
+
+  const highlights = buildFinanceExpenseHighlights(state.categories, state.expenses);
+
   return (
-    <section className="section-stack">
-      <header className="workspace-card section-stack">
-        <h2>Danh sách chi tiêu</h2>
-        <p>Theo dõi toàn bộ các khoản chi đã ghi nhận trong hệ thống.</p>
-        <p>Tổng đã ghi nhận: {formatFinanceMoney(total)}</p>
-      </header>
-
-      <form className="workspace-card" onSubmit={handleSubmit}>
-        <h3>Thêm khoản chi thủ công</h3>
-        <label className="form-field" htmlFor="expense-merchant">
-          <span>Nơi chi</span>
-          <input id="expense-merchant" value={draft.merchantName} onChange={(event) => setDraft((current) => ({ ...current, merchantName: event.target.value }))} />
-        </label>
-        <label className="form-field" htmlFor="expense-description">
-          <span>Mô tả</span>
-          <input id="expense-description" value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} />
-        </label>
-        <label className="form-field" htmlFor="expense-amount">
-          <span>Số tiền</span>
-          <input
-            id="expense-amount"
-            type="number"
-            min="1"
-            step="1000"
-            required
-            value={draft.amount}
-            onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
-          />
-        </label>
-        <label className="form-field" htmlFor="expense-category">
-          <span>Danh mục</span>
-          <select id="expense-category" value={draft.categoryId} onChange={(event) => setDraft((current) => ({ ...current, categoryId: event.target.value }))}>
-            <option value="">Chưa phân loại</option>
-            {state.categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="form-field" htmlFor="expense-spent-at">
-          <span>Thời gian chi</span>
-          <input
-            id="expense-spent-at"
-            type="datetime-local"
-            value={draft.spentAt}
-            onChange={(event) => setDraft((current) => ({ ...current, spentAt: event.target.value }))}
-          />
-        </label>
-        {submitMessage ? <StatusMessage tone={submitMessage.startsWith("Đã") ? "success" : "error"}>{submitMessage}</StatusMessage> : null}
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Đang thêm..." : "Thêm khoản chi"}
-        </button>
-      </form>
-
-      {state.isLoading ? <StatusMessage>Đang tải chi tiêu...</StatusMessage> : null}
+    <section className="section-stack finance-expenses-page">
       {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}
-      {!state.isLoading && !state.error && expenses.length === 0 ? <StatusMessage>Chưa có khoản chi nào.</StatusMessage> : null}
-
-      {!state.isLoading && !state.error && expenses.length > 0 ? (
-        <section className="workspace-card section-stack" aria-label="Bảng chi tiêu">
-          <h3>Chi tiết giao dịch</h3>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Nơi chi</th>
-                  <th scope="col">Mô tả</th>
-                  <th scope="col">Danh mục</th>
-                  <th scope="col">Ngày</th>
-                  <th scope="col">Số tiền</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((expense) => {
-                  const category = expense.category ?? (expense.categoryId ? categoryMap[expense.categoryId] : undefined);
-
-                  return (
-                    <tr key={expense.id}>
-                      <td>{expense.merchantName || "Không rõ"}</td>
-                      <td>{expense.description || "-"}</td>
-                      <td>{category?.name || "Khác"}</td>
-                      <td>{formatFinanceDate(expense.spentAt)}</td>
-                      <td>{formatFinanceMoney(expense.amount)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
+      <FinanceExpensesContent
+        categories={state.categories}
+        highlights={highlights}
+        draft={draft}
+        isSubmitting={isSubmitting}
+        submitMessage={submitMessage}
+        onSubmit={handleSubmit}
+        onDraftChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+      />
     </section>
   );
 }

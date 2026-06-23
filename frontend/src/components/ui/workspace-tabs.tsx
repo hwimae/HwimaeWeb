@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import React from "react";
 import { Button } from "@heroui/react";
 import Link from "next/link";
@@ -14,13 +15,27 @@ export type WorkspaceTabItem = {
 type WorkspaceTabsProps = {
   items: WorkspaceTabItem[];
   ariaLabel: string;
+  orientation?: "horizontal" | "vertical";
+  className?: string;
 };
 
-export function WorkspaceTabs({ items, ariaLabel }: WorkspaceTabsProps) {
+export function WorkspaceTabs({
+  items,
+  ariaLabel,
+  orientation = "horizontal",
+  className,
+}: WorkspaceTabsProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="workspace-nav workspace-tabs" aria-label={ariaLabel}>
+    <nav
+      className={clsx(
+        "workspace-nav workspace-tabs",
+        orientation === "vertical" ? "workspace-tabs-vertical" : "workspace-tabs-horizontal",
+        className,
+      )}
+      aria-label={ariaLabel}
+    >
       {items.map((item) => {
         const isActive = item.match
           ? item.match(pathname)
