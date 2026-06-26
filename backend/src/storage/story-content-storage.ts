@@ -1,10 +1,20 @@
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, normalize, resolve, sep } from 'node:path';
+import type { R2ReadOutcome } from './story-content-r2';
 
 export function buildStoredStoryContentPath(productId: number): string {
   return `storage/stories/${productId}.txt`;
 }
+
+export type StoryContentReader = { read(relativePath: string): Promise<string | null> };
+export type StoryContentLogger = Pick<Console, 'warn' | 'error'>;
+
+type CreateStoryContentReaderDeps = {
+  r2Reader?: { read(key: string): Promise<R2ReadOutcome> } | null;
+  logger?: StoryContentLogger;
+  backendRoot?: string;
+};
 
 const DEFAULT_BACKEND_ROOT = resolve(process.cwd());
 
@@ -64,4 +74,32 @@ export async function readStoryContentFromStorage(
 
     throw error;
   }
+}
+
+export function createStoryContentReader(deps: CreateStoryContentReaderDeps = {}): StoryContentReader {
+  const logger = deps.logger ?? console;
+  const backendRoot = deps.backendRoot ?? DEFAULT_BACKEND_ROOT;
+
+  return {
+    async read(relativePath: string): Promise<string | null> {
+      if (!deps.r2Reader) {
+        return readStoryContentFromStorage(relativePath, backendRoot);
+      }
+
+      const outcome = await deps.r2Reader.read(relativePath);
+
+      if (outcome.kind === 'hit') {
+        return outcome.content;
+      }
+
+      if (outcome.kind === 'not_found') {
+        logger.warn(`[story-content] R2 miss for ${relativePath}; trying local fallback`);
+        return readStoryContentFromStorage(relativePath, backendRoot);
+      }
+
+      logger.error(`[story-content] R2 ${outcome.errorType} for ${relativePath}: ${outcome.message}`);
+      logger.warn(`[story-content] local fallback for ${relativePath}`);
+      return readStoryContentFromStorage(relativePath, backendRoot);
+    },
+  };
 }

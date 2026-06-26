@@ -21,6 +21,7 @@ function createDepsMock(): BackendDeps {
     tokenService: { signAccessToken: jest.fn(), verifyAccessToken: jest.fn() },
     aiClient: {} as BackendDeps['aiClient'],
     financeAiClient: {} as BackendDeps['financeAiClient'],
+    storyContentReader: { read: jest.fn() },
     logger: { error: jest.fn() },
   };
 }

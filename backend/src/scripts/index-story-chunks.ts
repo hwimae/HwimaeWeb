@@ -1,8 +1,9 @@
 import { Prisma, PrismaClient, type Prisma as PrismaType } from '@prisma/client';
 import { loadConfig } from '../config';
-import { createAiClient } from '../recommendations/ai-client';
+import { createAiClient, type AiClient } from '../recommendations/ai-client';
 import { chunkStoryContent } from '../recommendations/story-chunker';
-import { readStoryContentFromStorage } from '../storage/story-content-storage';
+import { createR2StoryContentReader, getR2StoryContentConfig } from '../storage/story-content-r2';
+import { createStoryContentReader, type StoryContentReader } from '../storage/story-content-storage';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 500;
@@ -14,7 +15,7 @@ export type IndexStoryChunksOptions = {
   dryRun: boolean;
 };
 
-type StoryIndexCandidate = {
+export type StoryIndexCandidate = {
   id: string;
   title: string;
   contentPath: string | null;
@@ -139,11 +140,51 @@ async function replaceStoryChunks(
   });
 }
 
+export async function indexStoryCandidate(deps: {
+  prisma: Pick<PrismaClient, '$transaction' | 'story'>;
+  aiClient: Pick<AiClient, 'embedText'>;
+  storyContentReader: StoryContentReader;
+  story: StoryIndexCandidate;
+}): Promise<'indexed' | 'skipped_missing_content'> {
+  const { prisma, aiClient, storyContentReader, story } = deps;
+
+  if (!story.contentPath) {
+    return 'skipped_missing_content';
+  }
+
+  const content = await storyContentReader.read(story.contentPath);
+  if (content === null) {
+    return 'skipped_missing_content';
+  }
+
+  const chunks = chunkStoryContent(content);
+  const chunksWithEmbeddings: Array<{ chunkIndex: number; content: string; embedding: number[] }> = [];
+
+  for (const chunk of chunks) {
+    const embedding = await aiClient.embedText(`passage: ${chunk.content}`);
+    chunksWithEmbeddings.push({ ...chunk, embedding });
+  }
+
+  await replaceStoryChunks(prisma as PrismaClient, story.id, chunksWithEmbeddings);
+  const indexedAt = new Date();
+  await prisma.story.update({
+    where: { id: story.id },
+    data: buildIndexMetadataUpdateData(story.contentUpdatedAt, indexedAt),
+  });
+
+  return 'indexed';
+}
+
 async function main() {
   const options = parseIndexStoryChunksArgs(process.argv.slice(2));
   const config = loadConfig();
   const prisma = new PrismaClient();
   const aiClient = options.dryRun ? null : createAiClient(config.aiServiceUrl);
+  const r2Config = getR2StoryContentConfig(config);
+  const storyContentReader = createStoryContentReader({
+    r2Reader: r2Config ? createR2StoryContentReader(r2Config) : null,
+    logger: console,
+  });
 
   try {
     const stories = await findStoryIndexCandidates(prisma, options);
@@ -162,33 +203,23 @@ async function main() {
     }
 
     for (const story of stories) {
-      if (!story.contentPath) continue;
-
-      const content = await readStoryContentFromStorage(story.contentPath);
-      if (content === null) {
-        console.warn(`Skipped ${story.title}: content file not found at ${story.contentPath}`);
-        continue;
-      }
-
-      const chunks = chunkStoryContent(content);
-      const chunksWithEmbeddings: Array<{ chunkIndex: number; content: string; embedding: number[] }> = [];
-
       if (!aiClient) {
         throw new Error('AI client is required when not running dry-run');
       }
 
-      for (const chunk of chunks) {
-        const embedding = await aiClient.embedText(`passage: ${chunk.content}`);
-        chunksWithEmbeddings.push({ ...chunk, embedding });
+      const result = await indexStoryCandidate({
+        prisma,
+        aiClient,
+        storyContentReader,
+        story,
+      });
+
+      if (result === 'skipped_missing_content') {
+        console.warn(`Skipped ${story.title}: story content was not found in R2 or local storage`);
+        continue;
       }
 
-      await replaceStoryChunks(prisma, story.id, chunksWithEmbeddings);
-      const indexedAt = new Date();
-      await prisma.story.update({
-        where: { id: story.id },
-        data: buildIndexMetadataUpdateData(story.contentUpdatedAt, indexedAt),
-      });
-      console.log(`Indexed ${chunksWithEmbeddings.length} chunks for ${story.title}`);
+      console.log(`Indexed story chunks for ${story.title}`);
     }
 
     console.log(`Indexed story chunks for ${stories.length} stories`);

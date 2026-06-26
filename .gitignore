@@ -31,3 +31,6 @@ data/raw/books/*
 # Local generated story storage - keep folder only
 backend/storage/stories/*
 !backend/storage/stories/.gitkeep
+
+# Local nested repo / sandbox
+moniagent/

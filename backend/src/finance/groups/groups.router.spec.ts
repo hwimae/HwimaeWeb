@@ -36,6 +36,7 @@ function createDepsMock(): BackendDeps {
     tokenService: { signAccessToken: jest.fn(), verifyAccessToken: jest.fn(() => ({ sub: 'user1', email: 'boo@example.com' })) },
     aiClient: {} as BackendDeps['aiClient'],
     financeAiClient: {} as BackendDeps['financeAiClient'],
+    storyContentReader: { read: jest.fn() },
     logger: { error: jest.fn() },
   };
 }

@@ -1,6 +1,7 @@
 import {
   buildIndexMetadataUpdateData,
   buildStoryIndexWhere,
+  indexStoryCandidate,
   parseIndexStoryChunksArgs,
 } from './index-story-chunks';
 
@@ -66,5 +67,50 @@ describe('buildStoryIndexWhere', () => {
       contentPath: { not: null },
       id: { gt: 'story-1' },
     });
+  });
+});
+
+describe('indexStoryCandidate', () => {
+  it('skips a story when the shared content reader returns null', async () => {
+    const result = await indexStoryCandidate({
+      prisma: {
+        $transaction: jest.fn(),
+        story: { update: jest.fn() },
+      } as never,
+      aiClient: { embedText: jest.fn() } as never,
+      storyContentReader: { read: jest.fn().mockResolvedValue(null) },
+      story: {
+        id: 'story-1',
+        title: 'Missing content',
+        contentPath: 'storage/stories/missing.txt',
+        contentUpdatedAt: null,
+      },
+    });
+
+    expect(result).toBe('skipped_missing_content');
+  });
+
+  it('indexes a story when the shared content reader returns text', async () => {
+    const result = await indexStoryCandidate({
+      prisma: {
+        $transaction: jest.fn(async (callback) =>
+          callback({
+            storyChunk: { deleteMany: jest.fn() },
+            $executeRaw: jest.fn(),
+          }),
+        ),
+        story: { update: jest.fn().mockResolvedValue(undefined) },
+      } as never,
+      aiClient: { embedText: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) } as never,
+      storyContentReader: { read: jest.fn().mockResolvedValue('Chương 1\nChương 2') },
+      story: {
+        id: 'story-1',
+        title: 'Indexed content',
+        contentPath: 'storage/stories/1.txt',
+        contentUpdatedAt: new Date('2026-06-26T00:00:00.000Z'),
+      },
+    });
+
+    expect(result).toBe('indexed');
   });
 });
