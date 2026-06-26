@@ -1,10 +1,8 @@
 import { Prisma } from '@prisma/client';
 import type { BackendDeps } from '../dependencies';
 import { notFound } from '../errors';
-import { readStoryContentFromStorage } from '../storage/story-content-storage';
+import { createStoryContentReader, type StoryContentReader } from '../storage/story-content-storage';
 import type { ListStoriesQuery } from './stories.schema';
-
-type StoryContentReader = { read(relativePath: string): Promise<string | null> };
 
 type StoriesServiceDeps = Pick<BackendDeps, 'prisma'> & {
   storyContentReader?: StoryContentReader;
@@ -37,9 +35,7 @@ export type StoriesService = {
 };
 
 export function createStoriesService(deps: StoriesServiceDeps): StoriesService {
-  const storyContentReader: StoryContentReader = deps.storyContentReader ?? {
-    read: readStoryContentFromStorage,
-  };
+  const storyContentReader: StoryContentReader = deps.storyContentReader ?? createStoryContentReader();
 
   return {
     async listStories(query) {

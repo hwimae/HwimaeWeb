@@ -1,10 +1,11 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import {
   buildStoredStoryContentPath,
   computeStoryContentHash,
   copyStoryContentToStorage,
+  createStoryContentReader,
   readStoryContentFromStorage,
   resolveStoryContentPath,
 } from './story-content-storage';
@@ -44,6 +45,54 @@ describe('story-content-storage', () => {
 
   it('returns null when the storage file does not exist', async () => {
     await expect(readStoryContentFromStorage('storage/stories/missing.txt', backendRoot)).resolves.toBeNull();
+  });
+
+  it('returns R2 content before checking local storage', async () => {
+    const reader = createStoryContentReader({
+      r2Reader: { read: jest.fn().mockResolvedValue({ kind: 'hit', content: 'R2 content' }) },
+      logger: { warn: jest.fn(), error: jest.fn() },
+      backendRoot,
+    });
+
+    await expect(reader.read('storage/stories/10.txt')).resolves.toBe('R2 content');
+  });
+
+  it('falls back to local storage when R2 reports not_found', async () => {
+    const relativePath = 'storage/stories/10.txt';
+    await mkdir(dirname(join(backendRoot, relativePath)), { recursive: true });
+    await writeFile(join(backendRoot, relativePath), 'Local content', 'utf8');
+
+    const reader = createStoryContentReader({
+      r2Reader: { read: jest.fn().mockResolvedValue({ kind: 'not_found' }) },
+      logger: { warn: jest.fn(), error: jest.fn() },
+      backendRoot,
+    });
+
+    await expect(reader.read(relativePath)).resolves.toBe('Local content');
+  });
+
+  it('logs and falls back to local storage when R2 auth fails', async () => {
+    const warn = jest.fn();
+    const error = jest.fn();
+    const relativePath = 'storage/stories/10.txt';
+    await mkdir(dirname(join(backendRoot, relativePath)), { recursive: true });
+    await writeFile(join(backendRoot, relativePath), 'Local content', 'utf8');
+
+    const reader = createStoryContentReader({
+      r2Reader: {
+        read: jest.fn().mockResolvedValue({
+          kind: 'error',
+          errorType: 'auth_error',
+          message: 'Access denied',
+        }),
+      },
+      logger: { warn, error },
+      backendRoot,
+    });
+
+    await expect(reader.read(relativePath)).resolves.toBe('Local content');
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('auth_error'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('local fallback'));
   });
 
   it('rejects absolute paths and paths outside storage/stories', () => {

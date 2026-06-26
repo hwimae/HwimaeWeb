@@ -5,6 +5,8 @@ import type { AppConfig } from './config';
 import { createFinanceAiClient, type FinanceAiClient } from './finance/ai-client';
 import { createAiClient, type AiClient } from './recommendations/ai-client';
 import { prisma } from './prisma';
+import { createR2StoryContentReader, getR2StoryContentConfig } from './storage/story-content-r2';
+import { createStoryContentReader, type StoryContentReader } from './storage/story-content-storage';
 
 export type AccessTokenPayload = {
   sub: string;
@@ -31,10 +33,14 @@ export type BackendDeps = {
   tokenService: TokenService;
   aiClient: AiClient;
   financeAiClient: FinanceAiClient;
+  storyContentReader: StoryContentReader;
   logger: Logger;
 };
 
 export function createBackendDeps(config: AppConfig): BackendDeps {
+  const r2Config = getR2StoryContentConfig(config);
+  const r2Reader = r2Config ? createR2StoryContentReader(r2Config) : null;
+
   return {
     prisma,
     passwordHasher: {
@@ -52,6 +58,7 @@ export function createBackendDeps(config: AppConfig): BackendDeps {
     },
     aiClient: createAiClient(config.aiServiceUrl),
     financeAiClient: createFinanceAiClient(config.aiServiceUrl),
+    storyContentReader: createStoryContentReader({ r2Reader, logger: console }),
     logger: console,
   };
 }
