@@ -46,9 +46,8 @@ export function WorkspaceTabs({
             key={item.href}
             as={Link}
             href={item.href}
-            color="primary"
-            variant={isActive ? "solid" : "flat"}
-            className="workspace-nav-link"
+            variant="light"
+            className={clsx("workspace-nav-link", isActive && "workspace-nav-link-active")}
             aria-current={isActive ? "page" : undefined}
           >
             {item.label}

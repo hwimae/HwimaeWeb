@@ -51,13 +51,8 @@ export default function RegisterPage() {
       eyebrow="Auth"
       variant="workspace"
     >
-      <div className="auth-layout auth-layout-zip-first">
-        <aside className="auth-visual-panel glass-card" aria-label="Quy trình đăng ký">
-          <p className="eyebrow">Tài khoản mới</p>
-          <h2>Tạo tài khoản và chờ admin duyệt.</h2>
-          <p className="result-summary">Sau khi được duyệt, bạn có thể đăng nhập để dùng các workspace cá nhân.</p>
-        </aside>
-        <Card className="auth-card glass-card" shadow="sm">
+      <div className="auth-layout auth-layout-compact">
+        <Card className="auth-card" shadow="sm">
           <CardHeader>
             <h2>Tạo tài khoản mới</h2>
           </CardHeader>

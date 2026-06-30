@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "@heroui/react";
 import Link from "next/link";
 
 import { StoryListControls } from "../../components/story-list-controls";
@@ -138,29 +137,7 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
         <StoryWorkspaceNav />
 
         <div className="story-workspace-main section-stack">
-          <section className="story-feature-hero workspace-card" aria-label="Khám phá truyện">
-            <div className="story-feature-copy section-stack">
-              <p className="eyebrow">Truyện · Sáng tác &amp; khám phá</p>
-              <h2>Khám phá thế giới truyện</h2>
-              <p className="result-summary">
-                Tìm kiếm, đọc và lưu trữ những câu chuyện tuyệt vời nhất. Trải nghiệm không gian kể chuyện thư giãn với sự hỗ trợ của AI.
-              </p>
-              <div className="page-header-actions">
-                <Button as={Link} href="/recommendations" color="primary">
-                  AI tư vấn
-                </Button>
-                <Button as={Link} href="/login" color="primary" variant="flat">
-                  Đăng nhập
-                </Button>
-                <Button as={Link} href="/register" color="primary" variant="flat">
-                  Đăng ký
-                </Button>
-              </div>
-            </div>
-            <div className="story-feature-visual" aria-hidden="true" />
-          </section>
-
-          <section className="section-stack" aria-labelledby="story-popular-heading">
+          <section className="workspace-card section-stack" aria-labelledby="story-popular-heading">
             <div className="section-heading-row">
               <div className="section-stack">
                 <p className="eyebrow">Nổi bật</p>
@@ -180,7 +157,7 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
             )}
           </section>
 
-          <section className="section-stack" aria-labelledby="story-catalog-heading">
+          <section className="workspace-card section-stack" aria-labelledby="story-catalog-heading">
             <div className="story-catalog-header">
               <div className="section-stack">
                 <p className="eyebrow">Thư viện truyện</p>

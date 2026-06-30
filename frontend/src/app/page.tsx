@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, Chip, Link } from "@heroui/react";
+import { Card, CardBody, CardHeader, Link } from "@heroui/react";
 import {
   ArrowRight,
   BookOpenText,
@@ -63,46 +63,35 @@ export default function HomePage() {
   return (
     <main className="page-shell home-shell">
       <section className="home-hero-grid" aria-labelledby="home-title">
-        <div className="home-hero-copy section-stack">
-          <div className="section-stack home-hero-text">
-            <h1 id="home-title" className="home-hero-title">
-              Không gian kể chuyện &amp; quản lý tài chính thông minh.
-            </h1>
-            <p className="home-hero-description">
-              Tổ chức công việc sáng tạo, theo dõi chi tiêu và khám phá nội dung giải trí trong một không gian duy nhất,
-              tĩnh lặng và tập trung.
-            </p>
-          </div>
-
-          <div className="home-action-row">
-            <NextLink href="/stories" className="home-action home-action-primary">
-              <Compass size={18} />
-              <span>Khám phá truyện</span>
-            </NextLink>
-            <NextLink href="/finance/dashboard" className="home-action home-action-secondary">
-              <WalletCards size={18} />
-              <span>Quản lý tài chính</span>
-            </NextLink>
-            <NextLink href="/modules" className="home-action home-action-tertiary">
-              <span>Xem tất cả module</span>
-              <ArrowRight size={18} />
-            </NextLink>
-          </div>
-        </div>
-
-        <Card className="home-workspace-card glass-card" shadow="sm">
+        <Card className="home-workspace-card" shadow="sm">
           <CardHeader className="home-workspace-header">
             <div className="home-workspace-title-wrap">
               <div className="home-workspace-title-icon">
                 <BookOpenText size={18} />
               </div>
-              <h2>Workspace hôm nay</h2>
+              <h1 id="home-title" className="home-hero-title">
+                Không gian kể chuyện &amp; quản lý tài chính thông minh.
+              </h1>
             </div>
-            <Chip size="sm" variant="flat" color="primary">
-              Bản xem trước
-            </Chip>
           </CardHeader>
-          <CardBody>
+          <CardBody className="section-stack home-hero-copy">
+            <p className="home-hero-description">
+              Tổ chức công việc sáng tạo, theo dõi chi tiêu và khám phá nội dung giải trí trong một không gian duy nhất, tĩnh lặng và tập trung.
+            </p>
+            <div className="home-action-row">
+              <NextLink href="/stories" className="home-action">
+                <Compass size={18} />
+                <span>Khám phá truyện</span>
+              </NextLink>
+              <NextLink href="/finance/dashboard" className="home-action">
+                <WalletCards size={18} />
+                <span>Quản lý tài chính</span>
+              </NextLink>
+              <NextLink href="/modules" className="home-action">
+                <span>Xem tất cả module</span>
+                <ArrowRight size={18} />
+              </NextLink>
+            </div>
             <ul className="home-workspace-list" role="list">
               {WORKSPACE_ITEMS.map(({ label, value, icon: Icon, tone }) => (
                 <li key={label} className={`home-workspace-item home-workspace-item-${tone}`}>

@@ -23,9 +23,8 @@ export function FinanceMemberSelector({ members, selectedMemberUserId, onSelectM
           <Button
             key={member.userId}
             type="button"
-            color="primary"
-            variant={selectedMemberUserId === member.userId ? "solid" : "flat"}
-            className="finance-member-selector-item"
+            variant="light"
+            className={`finance-member-selector-item${selectedMemberUserId === member.userId ? " finance-member-selector-item-active" : ""}`}
             aria-pressed={selectedMemberUserId === member.userId}
             onPress={() => onSelectMember(member.userId)}
           >

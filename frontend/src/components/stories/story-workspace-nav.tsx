@@ -62,9 +62,8 @@ export function StoryWorkspaceNav() {
               key={href}
               as={Link}
               href={href}
-              color="primary"
-              variant={isActive ? "solid" : "flat"}
-              className="workspace-nav-link"
+              variant="light"
+              className={isActive ? "workspace-nav-link workspace-nav-link-active" : "workspace-nav-link"}
               aria-current={isActive ? "page" : undefined}
             >
               {label}

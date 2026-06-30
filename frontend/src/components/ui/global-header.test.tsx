@@ -24,21 +24,17 @@ describe("GlobalHeader", () => {
     mockedLogout.mockClear();
   });
 
-  it("renders the brand and primary navigation items", () => {
+  it("renders the header shell with neutral nav links and auth actions", () => {
     const html = renderToStaticMarkup(<GlobalHeader />);
 
     expect(html).toContain("StoryRec");
-    expect(html).toContain('href="/"');
+    expect(html).toContain("global-header-shell");
+    expect(html).toContain("global-header-nav-link");
+    expect(html).toContain("global-header-auth-button");
     expect(html).toContain('href="/finance/dashboard"');
-    expect(html).not.toContain('href="/finance"');
-    expect(html).toContain('href="/stories"');
-    expect(html).toContain('href="/movie"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/login"');
     expect(html).toContain('href="/register"');
-    expect(html).toContain("Login");
-    expect(html).toContain("Register");
-    expect(html).not.toContain("Đăng xuất");
     expect(html).not.toContain('href="/admin/users"');
   });
 

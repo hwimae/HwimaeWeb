@@ -1,7 +1,5 @@
 "use client";
 
-import { Button } from "@heroui/react";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 import { StatusMessage } from "../ui/status-message";
@@ -27,7 +25,7 @@ type FinanceStatCardProps = {
   label: string;
   value: string;
   detail: string;
-  tone: "spending" | "budget" | "remaining" | "usage";
+  tone: "spending" | "budget" | "remaining";
 };
 
 function isAbortError(error: unknown): boolean {
@@ -37,7 +35,6 @@ function isAbortError(error: unknown): boolean {
 function FinanceStatCard({ label, value, detail, tone }: FinanceStatCardProps) {
   return (
     <article className={`finance-stat-card finance-stat-card-${tone}`}>
-      <div className="finance-stat-icon" aria-hidden="true" />
       <div>
         <p className="finance-stat-label">{label}</p>
         <p className="finance-stat-value">{value}</p>
@@ -99,30 +96,10 @@ export function FinanceDashboard() {
   const totalSpent = state.summary?.totalAmount ?? 0;
   const totalBudget = categoriesWithBudget.reduce((sum, category) => sum + category.budget, 0);
   const remaining = Math.max(totalBudget - totalSpent, 0);
-  const usagePercentage = calculatePercentage(totalSpent, totalBudget);
   const budgetedCategoryCount = categoriesWithBudget.filter((category) => category.budget > 0).length;
 
   return (
     <section className="section-stack finance-dashboard">
-      <header className="workspace-card finance-dashboard-hero">
-        <div className="section-stack">
-          <p className="eyebrow">Tài chính · Dashboard cá nhân</p>
-          <h2>Tổng quan Tài chính</h2>
-          <p className="result-summary">
-            Theo dõi toàn bộ dữ liệu đã ghi nhận về chi tiêu, ngân sách và cảnh báo danh mục trong một không gian xanh biển nhẹ, rõ ràng và dễ quét mỗi ngày.
-          </p>
-          <div className="page-header-actions">
-            <Button as={Link} href="/finance/expenses" color="primary">
-              Thêm giao dịch
-            </Button>
-            <Button as={Link} href="/finance/chat" color="primary" variant="flat">
-              Hỏi AI tài chính
-            </Button>
-          </div>
-        </div>
-        <div className="finance-dashboard-hero-orb" aria-hidden="true" />
-      </header>
-
       {state.isLoading ? <StatusMessage>Đang tải dữ liệu tài chính...</StatusMessage> : null}
       {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}
 
@@ -130,9 +107,8 @@ export function FinanceDashboard() {
         <>
           <section className="finance-stat-grid" aria-label="Tổng quan ngân sách">
             <FinanceStatCard label="Tổng chi tiêu" value={formatFinanceMoney(totalSpent)} detail="Toàn bộ dữ liệu đã ghi nhận" tone="spending" />
-            <FinanceStatCard label="Tổng ngân sách" value={formatFinanceMoney(totalBudget)} detail={`${budgetedCategoryCount} danh mục có hạn mức`} tone="budget" />
+            <FinanceStatCard label="Ngân sách" value={formatFinanceMoney(totalBudget)} detail={`${budgetedCategoryCount} danh mục có hạn mức`} tone="budget" />
             <FinanceStatCard label="Còn lại" value={formatFinanceMoney(remaining)} detail="Phần ngân sách chưa sử dụng" tone="remaining" />
-            <FinanceStatCard label="Mức sử dụng" value={`${usagePercentage.toFixed(1)}%`} detail="So với tổng ngân sách" tone="usage" />
           </section>
 
           <section className="finance-chart-grid" aria-label="Biểu đồ và cảnh báo ngân sách">

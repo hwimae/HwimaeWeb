@@ -29,15 +29,15 @@ describe("PageShell", () => {
     expect(html).toContain("page-header-actions");
   });
 
-  it("supports the compact workspace variant", () => {
+  it("renders the workspace variant without the old hero-panel class", () => {
     const html = renderToStaticMarkup(
-      <PageShell title="Tài chính" variant="workspace">
+      <PageShell title="Tài chính" description="Theo dõi dòng tiền" variant="workspace">
         <p>Dashboard</p>
       </PageShell>,
     );
 
     expect(html).toContain("page-shell-workspace");
-    expect(html).toContain("Tài chính");
-    expect(html).toContain("Dashboard");
+    expect(html).toContain("page-header page-header-compact");
+    expect(html).not.toContain("hero-panel");
   });
 });

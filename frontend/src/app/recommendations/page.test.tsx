@@ -9,11 +9,12 @@ vi.mock("next/navigation", () => ({
 import RecommendationsPage from "./page";
 
 describe("RecommendationsPage", () => {
-  it("renders the workspace nav and the redesigned advisor entry panel", () => {
+  it("renders the workspace nav and the plain advisor entry card", () => {
     const html = renderToStaticMarkup(<RecommendationsPage />);
 
     expect(html).toContain("story-workspace-nav-sidebar");
-    expect(html).toContain("story-advisor-hero");
+    expect(html).toContain("story-advisor-card");
+    expect(html).not.toContain("story-advisor-hero");
     expect(html).toContain("Tìm truyện cùng AI");
     expect(html).toContain("Gợi ý nhanh");
     expect(html).not.toContain("Assistant cho gu đọc của bạn");

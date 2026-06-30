@@ -50,29 +50,11 @@ export function FinanceShell({ children }: FinanceShellProps) {
           <aside className="finance-shell-sidebar workspace-card" aria-label="Khu vực điều hướng Finance">
             <FinanceNav variant="rail" />
           </aside>
-          <div className="finance-shell-main section-stack">
-            <section className="workspace-card finance-intro" aria-label="Tóm tắt khu tài chính">
-              <div className="section-heading-row">
-                <div className="section-stack">
-                  <h2>Khu tài chính</h2>
-                  <p>Quản lý chi tiêu, ngân sách, nhóm chia sẻ và AI tài chính trong cùng một workspace xanh biển.</p>
-                </div>
-              </div>
-            </section>
-            {children}
-          </div>
+          <div className="finance-shell-main section-stack">{children}</div>
         </div>
       ) : (
         <div className="section-stack">
           <FinanceNav />
-          <section className="workspace-card finance-intro" aria-label="Tóm tắt khu tài chính">
-            <div className="section-heading-row">
-              <div className="section-stack">
-                <h2>Khu tài chính</h2>
-                <p>Quản lý chi tiêu, ngân sách, nhóm chia sẻ và AI tài chính trong cùng một workspace xanh biển.</p>
-              </div>
-            </div>
-          </section>
           {children}
         </div>
       )}

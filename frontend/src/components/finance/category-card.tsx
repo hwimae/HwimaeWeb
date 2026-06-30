@@ -1,7 +1,6 @@
 import { Card, CardBody } from "@heroui/react";
 import React from "react";
 
-import { BudgetUsageChart } from "./budget-usage-chart";
 import { calculatePercentage, formatFinanceMoney } from "./finance-format";
 
 type CategoryCardProps = {
@@ -17,45 +16,47 @@ type CategoryCardProps = {
 
 export function CategoryCard({ category }: CategoryCardProps) {
   const hasBudget = category.budget > 0;
-  const percentage = calculatePercentage(category.spent, category.budget);
-  const remaining = Math.max(category.budget - category.spent, 0);
+  const percentage = hasBudget ? Math.max(0, calculatePercentage(category.spent, category.budget)) : 0;
+  const normalizedPercentage = hasBudget ? Math.min(percentage, 100) : 0;
+  const isOverBudget = hasBudget && category.spent > category.budget;
   const categoryIcon = category.icon || category.name.slice(0, 1).toUpperCase();
-  const usageLabel = hasBudget ? `${percentage.toFixed(0)}%` : "Chưa đặt ngân sách";
-  const statusLabel = !hasBudget ? "Chưa đặt ngân sách" : category.spent > category.budget ? "Vượt hạn mức" : "Đang kiểm soát";
 
   return (
-    <Card as="article" className="section-stack glass-card finance-category-card" shadow="sm">
+    <Card as="article" className="section-stack finance-category-card" shadow="sm">
       <CardBody className="section-stack finance-category-card-body">
         <header className="finance-category-card-header">
-          <div className="finance-category-icon" style={{ backgroundColor: category.color ?? undefined }} aria-hidden="true">
-            {categoryIcon}
+          <div className="finance-category-card-title">
+            <span className="finance-category-icon" aria-hidden="true">
+              {categoryIcon}
+            </span>
+            <div className="section-stack">
+              <h3>{category.name}</h3>
+              <p>Đã chi {formatFinanceMoney(category.spent)}</p>
+            </div>
           </div>
-          <div>
-            <h3>{category.name}</h3>
-            <p>Đã chi {formatFinanceMoney(category.spent)}</p>
+          <div className="section-stack finance-category-status-block">
+            <strong className="finance-category-percentage">{Math.round(percentage)}%</strong>
+            {isOverBudget ? <span className="finance-category-status">Vượt hạn mức</span> : null}
           </div>
         </header>
 
-        <BudgetUsageChart label={`Mức sử dụng ngân sách ${category.name}`} spent={category.spent} budget={category.budget} size="small" />
+        <div className="finance-category-summary-row" aria-label={`Tóm tắt ngân sách ${category.name}`}>
+          <span>
+            <strong>Đã chi:</strong> {formatFinanceMoney(category.spent)}
+          </span>
+          <span>
+            <strong>Ngân sách:</strong> {hasBudget ? formatFinanceMoney(category.budget) : "Chưa có ngân sách"}
+          </span>
+        </div>
 
-        <dl className="finance-category-metrics data-grid">
-          <div>
-            <dt>Ngân sách</dt>
-            <dd>{formatFinanceMoney(category.budget)}</dd>
-          </div>
-          <div>
-            <dt>Còn lại</dt>
-            <dd>{formatFinanceMoney(remaining)}</dd>
-          </div>
-          <div>
-            <dt>Mức dùng</dt>
-            <dd>{usageLabel}</dd>
-          </div>
-          <div>
-            <dt>Trạng thái</dt>
-            <dd>{statusLabel}</dd>
-          </div>
-        </dl>
+        <progress
+          className="finance-category-progress"
+          value={normalizedPercentage}
+          max={100}
+          aria-label={`Tiến độ ngân sách ${category.name}`}
+        >
+          {normalizedPercentage}%
+        </progress>
       </CardBody>
     </Card>
   );

@@ -1,29 +1,14 @@
 import { Prisma } from '@prisma/client';
 import type { BackendDeps } from '../dependencies';
 import { badRequest } from '../errors';
-import type { AdvisorContext } from './ai-client';
+import type { SearchRecommendationsByVectorBody } from './recommendations.schema';
+import { searchStoryChunksByVector, type StoryChunkSearchRow } from './story-vector-search.repository';
 
 export type RecommendationQuery = {
   limit: number;
 };
 
-export type AskRecommendationInput = {
-  query: string;
-  limit: number;
-};
-
 type StoryCandidate = Prisma.StoryGetPayload<{ include: { category: true } }>;
-
-type StoryChunkSearchRow = {
-  storyId: string;
-  title: string;
-  authors: string;
-  category: string;
-  averageRating: number;
-  reviewCount: number;
-  chunkContent: string;
-  distance: number;
-};
 
 export type RecommendationItem = {
   storyId: string;
@@ -48,10 +33,10 @@ export type StoryAdvisorResponse = {
 export type RecommendationsService = {
   listPopularRecommendations(query: RecommendationQuery): Promise<RecommendationsResponse>;
   listRecommendationsForUser(userId: string, query: RecommendationQuery): Promise<RecommendationsResponse>;
-  askStoryAdvisor(input: AskRecommendationInput): Promise<StoryAdvisorResponse>;
+  searchStoryAdvisorByVector(input: SearchRecommendationsByVectorBody): Promise<StoryAdvisorResponse>;
 };
 
-export function createRecommendationsService(deps: Pick<BackendDeps, 'prisma' | 'aiClient'>): RecommendationsService {
+export function createRecommendationsService(deps: Pick<BackendDeps, 'prisma'>): RecommendationsService {
   return {
     async listPopularRecommendations(query) {
       return listRecommendations(deps, query);
@@ -70,61 +55,20 @@ export function createRecommendationsService(deps: Pick<BackendDeps, 'prisma' | 
       );
     },
 
-    async askStoryAdvisor(input) {
-      const queryEmbedding = await deps.aiClient.embedText(`query: ${input.query}`);
-      const rows = await searchStoryChunks(deps, queryEmbedding, input.limit * 4);
+    async searchStoryAdvisorByVector(input) {
+      const rows = await searchStoryChunksByVector(deps.prisma, input.embedding, input.limit);
       const recommendations = toAdvisorRecommendations(rows, input.limit);
 
       if (recommendations.length === 0) {
-        throw badRequest('Chưa có dữ liệu nội dung truyện để tư vấn. Hãy chạy script index story chunks trước.');
+        throw badRequest('Chưa có dữ liệu nội dung truyện để tư vấn. Hãy chạy script index story chunks ở máy local trước.');
       }
 
-      const contexts = recommendations.map((item): AdvisorContext => {
-        const row = rows.find((candidate) => candidate.storyId === item.storyId);
-        return {
-          storyId: item.storyId,
-          title: item.title,
-          authors: item.authors,
-          category: item.category,
-          reason: item.reason,
-          content: row?.chunkContent ?? '',
-          score: item.score,
-        };
-      });
-
-      try {
-        const answer = await deps.aiClient.generateAdvisorAnswer({ query: input.query, contexts });
-        return { answer, recommendations };
-      } catch {
-        return { answer: buildFallbackAnswer(recommendations.length), recommendations };
-      }
+      return {
+        answer: buildVectorSearchAnswer(input.query, recommendations.length),
+        recommendations,
+      };
     },
   };
-}
-
-async function searchStoryChunks(deps: Pick<BackendDeps, 'prisma'>, embedding: number[], limit: number): Promise<StoryChunkSearchRow[]> {
-  const vector = toVectorLiteral(embedding);
-
-  return deps.prisma.$queryRaw<StoryChunkSearchRow[]>`
-    SELECT
-      s.id AS "storyId",
-      s.title AS "title",
-      s.authors AS "authors",
-      c.name AS "category",
-      s."userAverageRating" AS "averageRating",
-      s."userReviewCount" AS "reviewCount",
-      sc.content AS "chunkContent",
-      sc.embedding <=> ${vector}::vector AS "distance"
-    FROM "story_chunks" sc
-    INNER JOIN "stories" s ON s.id = sc."storyId"
-    INNER JOIN "categories" c ON c.id = s."categoryId"
-    WHERE s."contentPath" IS NOT NULL
-      AND s."contentIndexedAt" IS NOT NULL
-      AND s."contentUpdatedAt" IS NOT NULL
-      AND s."contentIndexedAt" >= s."contentUpdatedAt"
-    ORDER BY sc.embedding <=> ${vector}::vector
-    LIMIT ${limit}
-  `;
 }
 
 function toAdvisorRecommendations(rows: StoryChunkSearchRow[], limit: number): RecommendationItem[] {
@@ -157,20 +101,10 @@ function summarizeChunk(content: string): string {
   return normalized.length <= 180 ? normalized : `${normalized.slice(0, 177)}…`;
 }
 
-function buildFallbackAnswer(count: number): string {
-  return `Mình tìm được ${count} truyện có nội dung gần với yêu cầu của bạn. Bạn có thể mở từng truyện để đọc chi tiết hơn.`;
-}
-
-function toVectorLiteral(values: number[]): string {
-  if (values.length !== 384) {
-    throw new Error(`Expected embedding dimension 384, received ${values.length}`);
-  }
-
-  if (!values.every((value) => Number.isFinite(value))) {
-    throw new Error('Embedding contains a non-finite value');
-  }
-
-  return `[${values.join(',')}]`;
+function buildVectorSearchAnswer(query: string, count: number): string {
+  return count > 0
+    ? `Dựa trên mô tả "${query}", mình tìm được ${count} truyện có nội dung gần nhất trong kho truyện đã index.`
+    : `Hiện chưa có truyện nào đủ gần với mô tả "${query}". Hãy thử thêm thể loại, nhân vật hoặc bối cảnh cụ thể hơn.`;
 }
 
 async function listRecommendations(

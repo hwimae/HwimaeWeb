@@ -1,22 +1,22 @@
 "use client";
 
 import { Button, Textarea } from "@heroui/react";
-import { Sparkles, Wand2 } from "lucide-react";
-import React, { FormEvent, useMemo, useState } from "react";
+import { Wand2 } from "lucide-react";
+import React, { FormEvent, useState } from "react";
 
+import { ApiError } from "../lib/api";
+import { requestStoryAdvisorRecommendations } from "../lib/story-recommendations";
+import type { StoryAdvisorResponse } from "../types/recommendation";
 import { AdvisorQuickPrompts } from "./stories/advisor-quick-prompts";
 import { AdvisorSummaryCard } from "./stories/advisor-summary-card";
 import { RecommendationStoryCard } from "./stories/recommendation-story-card";
 import { StatusMessage } from "./ui/status-message";
-import { apiPost } from "../lib/api";
-import {
-  parseStoryAdvisorResponse,
-  type StoryAdvisorResponse,
-} from "../types/recommendation";
 
 const EXAMPLE_QUERY =
   "Tôi thích truyện tu tiên, nam chính từ yếu thành mạnh, ít ngôn tình";
 const MAX_ADVISOR_QUERY_LENGTH = 500;
+const STORY_ADVISOR_GENERIC_ERROR =
+  "Không thể tải bộ mã hoá truyện trên trình duyệt hoặc gọi semantic search lúc này. Hãy thử lại sau ít phút.";
 
 export const ADVISOR_QUICK_PROMPTS = [
   "Huyền huyễn",
@@ -29,16 +29,21 @@ export function buildAdvisorPromptValue(prompt: string) {
   return `Mình muốn đọc truyện ${prompt}, nhân vật chính có chiều sâu, nhịp truyện cuốn hút và bối cảnh rõ nét.`;
 }
 
+export function resolveStoryAdvisorErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return STORY_ADVISOR_GENERIC_ERROR;
+}
+
 export function StoryAdvisorForm() {
   const [query, setQuery] = useState(EXAMPLE_QUERY);
   const [result, setResult] = useState<StoryAdvisorResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasRecommendations = useMemo(
-    () => (result?.recommendations.length ?? 0) > 0,
-    [result],
-  );
+  const hasRecommendations = (result?.recommendations.length ?? 0) > 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,15 +65,10 @@ export function StoryAdvisorForm() {
     setError(null);
 
     try {
-      const response = await apiPost<StoryAdvisorResponse>(
-        "/recommendations/ask",
-        { query: trimmedQuery, limit: 5 },
-        undefined,
-        parseStoryAdvisorResponse,
-      );
+      const response = await requestStoryAdvisorRecommendations(trimmedQuery, 5);
       setResult(response);
-    } catch {
-      setError("Không thể gọi AI tư vấn lúc này. Hãy thử lại sau ít phút.");
+    } catch (error) {
+      setError(resolveStoryAdvisorErrorMessage(error));
       setResult(null);
     } finally {
       setIsLoading(false);
@@ -79,19 +79,13 @@ export function StoryAdvisorForm() {
     <section className="section-stack story-advisor-layout">
       <form
         onSubmit={handleSubmit}
-        className="story-advisor-hero glass-card section-stack"
+        className="workspace-card section-stack story-advisor-card"
       >
-        <div className="story-advisor-hero-header">
-          <div className="story-advisor-hero-icon" aria-hidden="true">
-            <Sparkles size={22} />
-          </div>
-          <div className="section-stack">
-            <h2>Tìm truyện cùng AI</h2>
-            <p className="result-summary">
-              Hãy kể cho StoryRec nghe gu đọc của bạn để nhận danh sách truyện
-              phù hợp nhất.
-            </p>
-          </div>
+        <div className="section-stack">
+          <h2>Tìm truyện cùng AI</h2>
+          <p className="result-summary">
+            Trình duyệt sẽ tạo vector từ gu đọc của bạn rồi gửi sang backend để tìm truyện gần nghĩa nhất.
+          </p>
         </div>
 
         <div className="story-advisor-input-shell">
@@ -126,7 +120,7 @@ export function StoryAdvisorForm() {
               isLoading={isLoading}
               className="story-advisor-submit-button"
             >
-              {isLoading ? "Đang hỏi AI…" : "Hỏi AI tư vấn"}
+              {isLoading ? "Đang tạo vector và tìm truyện…" : "Tạo vector và tìm truyện"}
             </Button>
           </div>
         </div>

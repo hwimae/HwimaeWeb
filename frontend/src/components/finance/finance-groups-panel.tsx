@@ -55,9 +55,8 @@ export function FinanceGroupsPanel({ groups, selectedGroupId, isLoading, onSelec
               <Button
                 key={group.id}
                 type="button"
-                color="primary"
-                variant={isActive ? "solid" : "flat"}
-                className="finance-group-list-item"
+                variant="light"
+                className={`finance-group-list-item${isActive ? " finance-group-list-item-active" : ""}`}
                 aria-pressed={isActive}
                 onPress={() => onSelectGroup(group.id)}
               >

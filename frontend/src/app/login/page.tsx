@@ -67,13 +67,8 @@ function LoginForm() {
       eyebrow="Auth"
       variant="workspace"
     >
-      <div className="auth-layout auth-layout-zip-first">
-        <aside className="auth-visual-panel glass-card" aria-label="Lợi ích khi đăng nhập">
-          <p className="eyebrow">Tài khoản StoryRec</p>
-          <h2>Đăng nhập để đồng bộ trải nghiệm cá nhân.</h2>
-          <p className="result-summary">Viết review, nhận gợi ý truyện và truy cập các workspace đã được bật cho tài khoản của bạn.</p>
-        </aside>
-        <Card className="auth-card glass-card" shadow="sm">
+      <div className="auth-layout auth-layout-compact">
+        <Card className="auth-card" shadow="sm">
           <CardHeader>
             <h2>Chào mừng quay lại</h2>
           </CardHeader>

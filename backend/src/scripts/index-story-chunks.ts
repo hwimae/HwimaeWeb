@@ -1,6 +1,10 @@
 import { Prisma, PrismaClient, type Prisma as PrismaType } from '@prisma/client';
 import { loadConfig } from '../config';
 import { createAiClient, type AiClient } from '../recommendations/ai-client';
+import {
+  assertStoryEmbedding,
+  toStoryVectorLiteral,
+} from '../recommendations/embedding-contract';
 import { chunkStoryContent } from '../recommendations/story-chunker';
 import { createR2StoryContentReader, getR2StoryContentConfig } from '../storage/story-content-r2';
 import { createStoryContentReader, type StoryContentReader } from '../storage/story-content-storage';
@@ -110,17 +114,7 @@ function parseLimit(value: string | undefined): number {
 }
 
 function toVectorLiteral(values: number[]): string {
-  if (values.length !== 384) {
-    throw new Error(`Expected embedding dimension 384, received ${values.length}`);
-  }
-
-  for (const value of values) {
-    if (!Number.isFinite(value)) {
-      throw new Error('Embedding contains a non-finite value');
-    }
-  }
-
-  return `[${values.join(',')}]`;
+  return toStoryVectorLiteral(values);
 }
 
 async function replaceStoryChunks(
@@ -131,12 +125,18 @@ async function replaceStoryChunks(
   await prisma.$transaction(async (tx) => {
     await tx.storyChunk.deleteMany({ where: { storyId } });
 
-    for (const chunk of chunks) {
-      await tx.$executeRaw`
-        INSERT INTO "story_chunks" ("id", "storyId", "chunkIndex", "content", "embedding")
-        VALUES (gen_random_uuid()::text, ${storyId}, ${chunk.chunkIndex}, ${chunk.content}, ${toVectorLiteral(chunk.embedding)}::vector)
-      `;
+    if (chunks.length === 0) {
+      return;
     }
+
+    const values = Prisma.join(
+      chunks.map((chunk) => Prisma.sql`(gen_random_uuid()::text, ${storyId}, ${chunk.chunkIndex}, ${chunk.content}, ${toVectorLiteral(chunk.embedding)}::vector)`),
+    );
+
+    await tx.$executeRaw`
+      INSERT INTO "story_chunks" ("id", "storyId", "chunkIndex", "content", "embedding")
+      VALUES ${values}
+    `;
   });
 }
 
@@ -161,7 +161,7 @@ export async function indexStoryCandidate(deps: {
   const chunksWithEmbeddings: Array<{ chunkIndex: number; content: string; embedding: number[] }> = [];
 
   for (const chunk of chunks) {
-    const embedding = await aiClient.embedText(`passage: ${chunk.content}`);
+    const embedding = assertStoryEmbedding(await aiClient.embedText(`passage: ${chunk.content}`));
     chunksWithEmbeddings.push({ ...chunk, embedding });
   }
 

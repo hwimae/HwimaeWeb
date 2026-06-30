@@ -3,10 +3,10 @@ import type { BackendDeps } from '../dependencies';
 import { validateBody, validateQuery } from '../middleware/validate';
 import { createRecommendationsController } from './recommendations.controller';
 import {
-  askRecommendationSchema,
   recommendationsQuerySchema,
-  type AskRecommendationBody,
+  searchRecommendationsByVectorSchema,
   type RecommendationsQuery,
+  type SearchRecommendationsByVectorBody,
 } from './recommendations.schema';
 import { createRecommendationsService } from './recommendations.service';
 
@@ -24,10 +24,10 @@ export function createRecommendationsRouter(deps: BackendDeps): Router {
     validateQuery(recommendationsQuerySchema),
     controller.listMyRecommendations,
   );
-  router.post<Record<string, string>, unknown, AskRecommendationBody>(
-    '/ask',
-    validateBody(askRecommendationSchema),
-    controller.askStoryAdvisor,
+  router.post<Record<string, string>, unknown, SearchRecommendationsByVectorBody>(
+    '/search-by-vector',
+    validateBody(searchRecommendationsByVectorSchema),
+    controller.searchStoryAdvisorByVector,
   );
 
   return router;

@@ -90,6 +90,61 @@ describe('indexStoryCandidate', () => {
     expect(result).toBe('skipped_missing_content');
   });
 
+  it('rejects passage embeddings with the wrong dimension before starting a transaction', async () => {
+    const prisma = {
+      $transaction: jest.fn(async (callback) =>
+        callback({
+          storyChunk: { deleteMany: jest.fn() },
+          $executeRaw: jest.fn(),
+        }),
+      ),
+      story: { update: jest.fn().mockResolvedValue(undefined) },
+    };
+
+    await expect(
+      indexStoryCandidate({
+        prisma: prisma as never,
+        aiClient: { embedText: jest.fn().mockResolvedValue([0.1, 0.2]) } as never,
+        storyContentReader: { read: jest.fn().mockResolvedValue('Chương 1\nChương 2') },
+        story: {
+          id: 'story-1',
+          title: 'Indexed content',
+          contentPath: 'storage/stories/1.txt',
+          contentUpdatedAt: new Date('2026-06-29T00:00:00.000Z'),
+        },
+      }),
+    ).rejects.toThrow('Expected embedding dimension 384, received 2');
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('uses one raw insert statement for many chunks to keep the transaction short', async () => {
+    const tx = {
+      storyChunk: { deleteMany: jest.fn() },
+      $executeRaw: jest.fn().mockResolvedValue(undefined),
+    };
+    const prisma = {
+      $transaction: jest.fn(async (callback) => callback(tx)),
+      story: { update: jest.fn().mockResolvedValue(undefined) },
+    };
+    const longContent = `${'A'.repeat(2600)}\n${'B'.repeat(2600)}`;
+
+    const result = await indexStoryCandidate({
+      prisma: prisma as never,
+      aiClient: { embedText: jest.fn().mockResolvedValue(new Array(384).fill(0.1)) } as never,
+      storyContentReader: { read: jest.fn().mockResolvedValue(longContent) },
+      story: {
+        id: 'story-1',
+        title: 'Indexed content',
+        contentPath: 'storage/stories/1.txt',
+        contentUpdatedAt: new Date('2026-06-26T00:00:00.000Z'),
+      },
+    });
+
+    expect(result).toBe('indexed');
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+  });
+
   it('indexes a story when the shared content reader returns text', async () => {
     const result = await indexStoryCandidate({
       prisma: {
