@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { CategoryCard } from "./category-card";
 
 describe("CategoryCard", () => {
-  it("renders category budget and spending summary", () => {
+  it("renders a horizontal progress summary instead of the donut usage card", () => {
     const html = renderToStaticMarkup(
       <CategoryCard
         category={{
@@ -18,20 +18,16 @@ describe("CategoryCard", () => {
       />,
     );
 
-    expect(html).toContain("finance-category-card");
-    expect(html).toContain("finance-category-icon");
-    expect(html).toContain("finance-category-metrics");
-    expect(html).toContain("Ăn uống");
-    expect(html).toContain("25.000");
-    expect(html).toContain("100.000");
-    expect(html).toContain("Mức sử dụng ngân sách Ăn uống");
-    const progressTag = ["<", "progress"].join("");
-
-    expect(html).toContain("25.0%");
-    expect(html).not.toContain(progressTag);
+    expect(html).toContain("finance-category-progress");
+    expect(html).toContain("25%");
+    expect(html).toContain("Đã chi");
+    expect(html).toContain("Ngân sách");
+    expect(html).toContain("<progress");
+    expect(html).not.toContain("Mức sử dụng ngân sách Ăn uống");
+    expect(html).not.toContain("finance-category-metrics");
   });
 
-  it("marks spending without a budget as missing a budget instead of under control", () => {
+  it("shows an empty progress state when the category has no budget", () => {
     const html = renderToStaticMarkup(
       <CategoryCard
         category={{
@@ -44,7 +40,27 @@ describe("CategoryCard", () => {
       />,
     );
 
-    expect(html).toContain("Chưa đặt ngân sách");
+    expect(html).toContain("0%");
+    expect(html).toContain("Chưa có ngân sách");
+    expect(html).toContain("<progress");
     expect(html).not.toContain("Đang kiểm soát");
+  });
+
+  it("keeps the real overspend percentage visible when a category exceeds budget", () => {
+    const html = renderToStaticMarkup(
+      <CategoryCard
+        category={{
+          id: "cat3",
+          name: "Nhà ở",
+          color: "#3b82f6",
+          spent: 160000,
+          budget: 100000,
+        }}
+      />,
+    );
+
+    expect(html).toContain("160%");
+    expect(html).toContain("Vượt hạn mức");
+    expect(html).toContain("<progress");
   });
 });

@@ -9,10 +9,17 @@ vi.mock("next/navigation", () => ({
 }));
 
 let mockedUser: unknown = null;
+let mockedIsCheckingAuth = false;
+let mockedIsRefreshingAuth = false;
 const mockedLogout = vi.fn();
 
 vi.mock("@/components/auth/auth-context", () => ({
-  useAuth: () => ({ user: mockedUser, isCheckingAuth: false, logout: mockedLogout }),
+  useAuth: () => ({
+    user: mockedUser,
+    isCheckingAuth: mockedIsCheckingAuth,
+    isRefreshingAuth: mockedIsRefreshingAuth,
+    logout: mockedLogout,
+  }),
 }));
 
 import { GlobalHeader } from "./global-header";
@@ -21,24 +28,22 @@ describe("GlobalHeader", () => {
   beforeEach(() => {
     mockedPathname = "/finance/dashboard";
     mockedUser = null;
+    mockedIsCheckingAuth = false;
+    mockedIsRefreshingAuth = false;
     mockedLogout.mockClear();
   });
 
-  it("renders the brand and primary navigation items", () => {
+  it("renders the header shell with neutral nav links and auth actions", () => {
     const html = renderToStaticMarkup(<GlobalHeader />);
 
-    expect(html).toContain("StoryRec");
-    expect(html).toContain('href="/"');
+    expect(html).toContain("Hwimae");
+    expect(html).toContain("global-header-shell");
+    expect(html).toContain("global-header-nav-link");
+    expect(html).toContain("global-header-auth-button");
     expect(html).toContain('href="/finance/dashboard"');
-    expect(html).not.toContain('href="/finance"');
-    expect(html).toContain('href="/stories"');
-    expect(html).toContain('href="/movie"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/login"');
     expect(html).toContain('href="/register"');
-    expect(html).toContain("Login");
-    expect(html).toContain("Register");
-    expect(html).not.toContain("Đăng xuất");
     expect(html).not.toContain('href="/admin/users"');
   });
 
@@ -67,6 +72,23 @@ describe("GlobalHeader", () => {
     expect(html).toContain("User");
     expect(html).not.toContain('href="/login"');
     expect(html).not.toContain('href="/register"');
+  });
+
+  it("keeps auth actions visible during background auth refresh", () => {
+    mockedUser = {
+      id: "user1",
+      email: "user@example.com",
+      name: "User",
+      role: "USER",
+      status: "APPROVED",
+    };
+    mockedIsCheckingAuth = false;
+    mockedIsRefreshingAuth = true;
+
+    const html = renderToStaticMarkup(<GlobalHeader />);
+
+    expect(html).toContain("Đăng xuất");
+    expect(html).toContain("User");
   });
 
   it("shows the admin entry for approved admins", () => {

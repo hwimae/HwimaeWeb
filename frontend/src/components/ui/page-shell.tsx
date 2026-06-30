@@ -21,14 +21,14 @@ export function PageShell({
 }: PageShellProps) {
   return (
     <main className={clsx("page-shell", variant === "workspace" && "page-shell-workspace")}>
-      <header className={clsx("page-header", "hero-panel", variant === "workspace" && "workspace-hero")}>
-        <div className="section-stack page-hero-copy">
+      <header className={clsx("page-header", "page-header-compact", variant === "workspace" && "page-header-workspace")}>
+        <div className="section-stack page-header-copy">
           <p className="eyebrow">{eyebrow}</p>
           <h1>{title}</h1>
-          {description ? <p>{description}</p> : null}
+          {description ? <p className="page-header-description">{description}</p> : null}
           {actions ? <div className="page-header-actions">{actions}</div> : null}
         </div>
-        {heroAside ? <div className="page-hero-aside">{heroAside}</div> : null}
+        {heroAside ? <div className="page-header-aside">{heroAside}</div> : null}
       </header>
       {children}
     </main>

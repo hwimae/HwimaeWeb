@@ -1,10 +1,12 @@
 "use client";
 
-import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useRef, useState } from "react";
+import React, { FormEvent, Suspense, useRef, useState } from "react";
 
+import { AUTH_REQUIRED_REDIRECT_REASON } from "@/components/auth/auth-routing";
 import { FormField } from "@/components/ui/form-field";
+import { FormSurface } from "@/components/ui/form-surface";
 import { PageShell } from "@/components/ui/page-shell";
 import { StatusMessage } from "@/components/ui/status-message";
 import { ApiError, apiPost } from "@/lib/api";
@@ -27,7 +29,9 @@ function getLoginErrorMessage(error: unknown): string {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const redirectReason = searchParams.get("redirectReason");
   const registeredPending = searchParams.get("registered") === "pending";
+  const shouldShowAuthRequiredNotice = redirectReason === AUTH_REQUIRED_REDIRECT_REASON;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -67,17 +71,19 @@ function LoginForm() {
       eyebrow="Auth"
       variant="workspace"
     >
-      <div className="auth-layout auth-layout-zip-first">
-        <aside className="auth-visual-panel glass-card" aria-label="Lợi ích khi đăng nhập">
-          <p className="eyebrow">Tài khoản StoryRec</p>
-          <h2>Đăng nhập để đồng bộ trải nghiệm cá nhân.</h2>
-          <p className="result-summary">Viết review, nhận gợi ý truyện và truy cập các workspace đã được bật cho tài khoản của bạn.</p>
-        </aside>
-        <Card className="auth-card glass-card" shadow="sm">
-          <CardHeader>
+      <div className="auth-layout auth-layout-compact">
+        <FormSurface className="auth-card">
+          <div className="form-surface-heading">
             <h2>Chào mừng quay lại</h2>
-          </CardHeader>
-          <CardBody>
+          </div>
+
+          <div className="form-surface-stack">
+            {registeredPending ? (
+              <StatusMessage tone="success">Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản.</StatusMessage>
+            ) : null}
+
+            {shouldShowAuthRequiredNotice ? <StatusMessage>Bạn cần đăng nhập để tiếp tục.</StatusMessage> : null}
+
             <form onSubmit={handleSubmit} className="section-stack">
               <FormField
                 id="email"
@@ -103,10 +109,6 @@ function LoginForm() {
                 onChange={(event) => setPassword(event.target.value)}
               />
 
-              {registeredPending ? (
-                <StatusMessage tone="success">Đăng ký thành công. Vui lòng chờ admin duyệt tài khoản.</StatusMessage>
-              ) : null}
-
               <div id={errorRegionId} ref={errorRegionRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
                 {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
               </div>
@@ -115,8 +117,8 @@ function LoginForm() {
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
             </form>
-          </CardBody>
-        </Card>
+          </div>
+        </FormSurface>
       </div>
     </PageShell>
   );

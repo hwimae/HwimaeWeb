@@ -24,6 +24,28 @@ export function formatFinanceDate(value?: string | null): string {
   return dateFormatter.format(date);
 }
 
+export function normalizeFinanceAmountInput(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 0) return "";
+
+  const normalized = digits.replace(/^0+(?=\d)/, "");
+  return normalized.length > 0 ? normalized : "0";
+}
+
+export function formatFinanceAmountInput(value: string | number): string {
+  const normalized = normalizeFinanceAmountInput(String(value));
+  if (!normalized) return "";
+
+  return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+export function parseFinanceAmountInput(value: string): number | null {
+  const normalized = normalizeFinanceAmountInput(value);
+  if (!normalized) return null;
+
+  return Number(normalized);
+}
+
 export function calculatePercentage(value: number, total: number): number {
   if (total <= 0) return 0;
   return (value / total) * 100;

@@ -12,16 +12,6 @@ const candidateRows = [
     distance: 0.1,
   },
   {
-    storyId: 'story-1',
-    title: 'Tu Tiên Ký',
-    authors: 'Tác giả A',
-    category: 'Tiên hiệp',
-    averageRating: 4.8,
-    reviewCount: 120,
-    chunkContent: 'Nhân vật chính vượt qua thử thách trong môn phái.',
-    distance: 0.2,
-  },
-  {
     storyId: 'story-2',
     title: 'Đấu Trí Thành Chủ',
     authors: 'Tác giả B',
@@ -75,53 +65,82 @@ describe('listPopularRecommendations', () => {
   });
 });
 
-describe('askStoryAdvisor', () => {
-  it('groups vector matches by story and asks AI for an answer', async () => {
+describe('searchStoryAdvisorByVector', () => {
+  it('returns grouped recommendations from the provided vector without calling aiClient', async () => {
     const prisma = {
       $queryRaw: jest.fn().mockResolvedValue(candidateRows),
     };
-    const aiClient = {
-      embedText: jest.fn().mockResolvedValue(Array.from({ length: 384 }, () => 0.01)),
-      generateAdvisorAnswer: jest.fn().mockResolvedValue('Bạn nên thử Tu Tiên Ký.'),
-    };
-    const service = createRecommendationsService({ prisma, aiClient } as never);
 
-    const result = await service.askStoryAdvisor({ query: 'main yếu thành mạnh', limit: 2 });
+    const service = createRecommendationsService({ prisma } as never);
+    const result = await service.searchStoryAdvisorByVector({
+      query: 'main yếu thành mạnh',
+      embedding: new Array(384).fill(0.01),
+      limit: 2,
+    });
 
-    expect(result.answer).toBe('Bạn nên thử Tu Tiên Ký.');
+    expect(result.answer).toContain('main yếu thành mạnh');
     expect(result.recommendations).toHaveLength(2);
     expect(result.recommendations[0].storyId).toBe('story-1');
     expect(result.recommendations[0].reason).toContain('Nội dung gần với yêu cầu');
 
     const sql = (prisma.$queryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join('?');
+    expect(sql).toContain('ROW_NUMBER() OVER');
+    expect(sql).toContain('PARTITION BY s.id');
+    expect(sql).toContain('WHERE "storyRank" = 1');
     expect(sql).toContain('s."contentPath" IS NOT NULL');
     expect(sql).toContain('s."contentIndexedAt" IS NOT NULL');
     expect(sql).toContain('s."contentUpdatedAt" IS NOT NULL');
     expect(sql).toContain('s."contentIndexedAt" >= s."contentUpdatedAt"');
     expect(sql).not.toContain('s."contentUpdatedAt" IS NULL');
-
-    expect(aiClient.generateAdvisorAnswer).toHaveBeenCalledWith({
-      query: 'main yếu thành mạnh',
-      contexts: expect.arrayContaining([
-        expect.objectContaining({ storyId: 'story-1', title: 'Tu Tiên Ký' }),
-        expect.objectContaining({ storyId: 'story-2', title: 'Đấu Trí Thành Chủ' }),
-      ]),
-    });
   });
 
-  it('returns a deterministic fallback answer when LLM fails', async () => {
+  it('can return up to the requested number of unique stories from the ranked repository rows', async () => {
     const prisma = {
-      $queryRaw: jest.fn().mockResolvedValue(candidateRows.slice(0, 1)),
+      $queryRaw: jest.fn().mockResolvedValue([
+        {
+          storyId: 'story-1',
+          title: 'Tu Tiên Ký',
+          authors: 'Tác giả A',
+          category: 'Tiên hiệp',
+          averageRating: 4.8,
+          reviewCount: 120,
+          chunkContent: 'Thiếu niên yếu ớt bước vào con đường tu luyện và dần mạnh lên.',
+          distance: 0.1,
+        },
+        {
+          storyId: 'story-2',
+          title: 'Đấu Trí Thành Chủ',
+          authors: 'Tác giả B',
+          category: 'Huyền huyễn',
+          averageRating: 4.5,
+          reviewCount: 80,
+          chunkContent: 'Các thế lực đấu trí để giành quyền kiểm soát thành trì.',
+          distance: 0.2,
+        },
+        {
+          storyId: 'story-3',
+          title: 'Hắc Long Sơn',
+          authors: 'Tác giả C',
+          category: 'Phiêu lưu',
+          averageRating: 4.4,
+          reviewCount: 64,
+          chunkContent: 'Một đoàn thám hiểm tiến vào dãy núi đầy bí ẩn và cổ vật.',
+          distance: 0.3,
+        },
+      ]),
     };
-    const aiClient = {
-      embedText: jest.fn().mockResolvedValue(Array.from({ length: 384 }, () => 0.01)),
-      generateAdvisorAnswer: jest.fn().mockRejectedValue(new Error('Gemini is not available')),
-    };
-    const service = createRecommendationsService({ prisma, aiClient } as never);
 
-    const result = await service.askStoryAdvisor({ query: 'tu tiên', limit: 1 });
+    const service = createRecommendationsService({ prisma } as never);
+    const result = await service.searchStoryAdvisorByVector({
+      query: 'phiêu lưu tu luyện',
+      embedding: new Array(384).fill(0.02),
+      limit: 3,
+    });
 
-    expect(result.answer).toBe('Mình tìm được 1 truyện có nội dung gần với yêu cầu của bạn. Bạn có thể mở từng truyện để đọc chi tiết hơn.');
-    expect(result.recommendations).toHaveLength(1);
+    expect(result.recommendations.map((item) => item.storyId)).toEqual([
+      'story-1',
+      'story-2',
+      'story-3',
+    ]);
   });
 });

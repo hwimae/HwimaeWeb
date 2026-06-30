@@ -2,7 +2,6 @@ import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
 import Link from "next/link";
 
 import { ReviewForm } from "@/components/review-form";
-import { StoryWorkspaceNav } from "@/components/stories/story-workspace-nav";
 import { MetricPill } from "@/components/ui/metric-pill";
 import { PageShell } from "@/components/ui/page-shell";
 import { PageState } from "@/components/ui/page-state";
@@ -73,7 +72,6 @@ export default async function StoryDetailPage({ params }: StoryPageProps) {
         <Button as={Link} href="/stories" color="primary" variant="flat">
           ← Quay lại danh sách truyện
         </Button>
-        <StoryWorkspaceNav />
 
         <Card className="section-stack glass-card story-summary-card" shadow="sm" aria-label="Thông tin truyện">
           <CardHeader className="story-summary-header">

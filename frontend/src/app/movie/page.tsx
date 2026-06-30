@@ -24,9 +24,6 @@ export default function MoviePage() {
           <Button as={NextLink} href="/" color="primary">
             Về trang chủ
           </Button>
-          <Button as={NextLink} href="/modules" color="primary" variant="flat">
-            Xem module khác
-          </Button>
         </div>
       </section>
       <PageState

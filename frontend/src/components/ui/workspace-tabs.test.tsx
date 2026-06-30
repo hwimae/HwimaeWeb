@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 import { WorkspaceTabs } from "./workspace-tabs";
 
 describe("WorkspaceTabs", () => {
-  it("renders pill tabs and marks the active href", () => {
+  it("marks the active tab with aria-current without depending on HeroUI solid colors", () => {
     const html = renderToStaticMarkup(
       <WorkspaceTabs
         ariaLabel="Điều hướng khu truyện"
@@ -25,6 +25,7 @@ describe("WorkspaceTabs", () => {
     expect(html).toContain('href="/recommendations"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain("workspace-nav-link");
+    expect(html).not.toContain("color=\"primary\"");
   });
 
   it("renders a vertical workspace tab rail when requested", () => {

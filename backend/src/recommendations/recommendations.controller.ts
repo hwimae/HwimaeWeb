@@ -1,13 +1,16 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { BackendDeps } from '../dependencies';
 import { unauthorized } from '../errors';
-import type { AskRecommendationBody, RecommendationsQuery } from './recommendations.schema';
+import type {
+  RecommendationsQuery,
+  SearchRecommendationsByVectorBody,
+} from './recommendations.schema';
 import type { RecommendationsService } from './recommendations.service';
 
 export type RecommendationsController = {
   listPopularRecommendations: RequestHandler<Record<string, string>, unknown, unknown, RecommendationsQuery>;
   listMyRecommendations: RequestHandler<Record<string, string>, unknown, unknown, RecommendationsQuery>;
-  askStoryAdvisor: RequestHandler<Record<string, string>, unknown, AskRecommendationBody>;
+  searchStoryAdvisorByVector: RequestHandler<Record<string, string>, unknown, SearchRecommendationsByVectorBody>;
 };
 
 export function createRecommendationsController(
@@ -15,11 +18,7 @@ export function createRecommendationsController(
   deps: Pick<BackendDeps, 'prisma' | 'tokenService'>,
 ): RecommendationsController {
   return {
-    async listPopularRecommendations(
-      req: Request<Record<string, string>, unknown, unknown, RecommendationsQuery>,
-      res: Response,
-      next: NextFunction,
-    ) {
+    async listPopularRecommendations(req, res, next) {
       try {
         res.json(await recommendationsService.listPopularRecommendations(req.query));
       } catch (error) {
@@ -27,11 +26,7 @@ export function createRecommendationsController(
       }
     },
 
-    async listMyRecommendations(
-      req: Request<Record<string, string>, unknown, unknown, RecommendationsQuery>,
-      res: Response,
-      next: NextFunction,
-    ) {
+    async listMyRecommendations(req, res, next) {
       try {
         const userId = await getOptionalUserId(req, deps);
         const recommendations = userId
@@ -44,9 +39,9 @@ export function createRecommendationsController(
       }
     },
 
-    async askStoryAdvisor(req: Request<Record<string, string>, unknown, AskRecommendationBody>, res: Response, next: NextFunction) {
+    async searchStoryAdvisorByVector(req, res, next) {
       try {
-        res.json(await recommendationsService.askStoryAdvisor(req.body));
+        res.json(await recommendationsService.searchStoryAdvisorByVector(req.body));
       } catch (error) {
         next(error);
       }

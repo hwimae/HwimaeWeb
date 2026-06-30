@@ -1,7 +1,6 @@
 import React from "react";
 
 import { StoryAdvisorForm } from "../../components/story-advisor-form";
-import { StoryWorkspaceNav } from "../../components/stories/story-workspace-nav";
 import { PageShell } from "../../components/ui/page-shell";
 
 export default function RecommendationsPage() {
@@ -12,10 +11,7 @@ export default function RecommendationsPage() {
       eyebrow="Story workspace"
       variant="workspace"
     >
-      <div className="section-stack story-workspace-layout">
-        <StoryWorkspaceNav />
-        <StoryAdvisorForm />
-      </div>
+      <StoryAdvisorForm />
     </PageShell>
   );
 }

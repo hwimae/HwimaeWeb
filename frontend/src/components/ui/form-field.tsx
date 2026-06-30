@@ -1,4 +1,5 @@
 import { Input, Textarea } from "@heroui/react";
+import clsx, { type ClassValue } from "clsx";
 import React, { type ComponentProps } from "react";
 
 type BaseFormFieldProps = {
@@ -22,9 +23,26 @@ type TextareaFormFieldProps = BaseFormFieldProps &
 
 type FormFieldProps = InputFormFieldProps | TextareaFormFieldProps;
 
+type FormFieldSlotClassNames = {
+  inputWrapper?: ClassValue;
+  input?: ClassValue;
+  label?: ClassValue;
+  description?: ClassValue;
+};
+
+function mergeFormFieldClassNames<T extends FormFieldSlotClassNames>(classNames?: T) {
+  return {
+    ...classNames,
+    inputWrapper: clsx("form-field-input-wrapper", classNames?.inputWrapper),
+    input: clsx("form-field-input-element", classNames?.input),
+    label: clsx("form-field-label", classNames?.label),
+    description: clsx("form-field-description", classNames?.description),
+  };
+}
+
 export function FormField(props: FormFieldProps) {
   if (props.kind === "textarea") {
-    const { id, label, hint, kind: _kind, ...fieldProps } = props;
+    const { id, label, hint, kind: _kind, classNames, ...fieldProps } = props;
 
     return (
       <Textarea
@@ -35,11 +53,12 @@ export function FormField(props: FormFieldProps) {
         variant="bordered"
         color="primary"
         className="form-field"
+        classNames={mergeFormFieldClassNames(classNames)}
       />
     );
   }
 
-  const { id, label, hint, kind: _kind, ...fieldProps } = props;
+  const { id, label, hint, kind: _kind, classNames, ...fieldProps } = props;
 
   return (
     <Input
@@ -50,6 +69,7 @@ export function FormField(props: FormFieldProps) {
       variant="bordered"
       color="primary"
       className="form-field"
+      classNames={mergeFormFieldClassNames(classNames)}
     />
   );
 }

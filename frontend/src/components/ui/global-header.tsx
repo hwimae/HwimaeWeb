@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Link as HeroLink } from "@heroui/react";
-import { CircleUserRound, Search, ShieldUser } from "lucide-react";
+import { CircleUserRound } from "lucide-react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -19,7 +19,7 @@ const STORY_PATH_PREFIXES = ["/stories", "/recommendations", "/login", "/registe
 
 function isModuleActive(pathname: string, href: string): boolean {
   if (href === "/") {
-    return pathname === "/" || pathname === "/modules";
+    return pathname === "/";
   }
 
   if (href === "/finance/dashboard") {
@@ -35,17 +35,18 @@ function isModuleActive(pathname: string, href: string): boolean {
 
 export function GlobalHeader() {
   const pathname = usePathname();
-  const { user, isCheckingAuth, logout } = useAuth();
+  const { user, isCheckingAuth, isRefreshingAuth, logout } = useAuth();
   const links =
     user?.role === "ADMIN" && user.status === "APPROVED"
       ? [...MODULE_LINKS, { href: "/admin/users", label: "Admin" }]
       : MODULE_LINKS;
+  const shouldHideAuthActions = isCheckingAuth && !isRefreshingAuth;
 
   return (
     <header className="global-header">
       <div className="global-header-shell">
         <HeroLink as={NextLink} href="/" color="foreground" className="global-header-brand">
-          <span className="global-header-brand-mark">StoryRec</span>
+          <span className="global-header-brand-mark">Hwimae</span>
         </HeroLink>
 
         <nav className="global-header-menu" aria-label="Điều hướng chính">
@@ -68,33 +69,7 @@ export function GlobalHeader() {
         </nav>
 
         <div className="global-header-actions">
-          <Button
-            as={NextLink}
-            href="/stories"
-            isIconOnly
-            variant="light"
-            radius="full"
-            aria-label="Tìm kiếm truyện"
-            className="global-header-icon-button"
-          >
-            <Search size={16} />
-          </Button>
-
-          {user?.role === "ADMIN" && user.status === "APPROVED" ? (
-            <Button
-              as={NextLink}
-              href="/admin/users"
-              isIconOnly
-              variant="light"
-              radius="full"
-              aria-label="Quản trị người dùng"
-              className="global-header-icon-button"
-            >
-              <ShieldUser size={16} />
-            </Button>
-          ) : null}
-
-          {!isCheckingAuth &&
+          {!shouldHideAuthActions &&
             (user ? (
               <>
                 <div className="global-header-account">

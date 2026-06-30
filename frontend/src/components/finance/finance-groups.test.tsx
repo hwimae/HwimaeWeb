@@ -83,7 +83,8 @@ describe("Finance Groups UI", () => {
   it("renders selected member dashboard and owner delete actions", () => {
     const html = renderToStaticMarkup(<FinanceMemberDashboard dashboard={dashboard} canDelete={true} onDeleteExpense={() => undefined} onDeleteBudget={() => undefined} />);
 
-    expect(html).toContain("Đang xem nội dung Finance của An");
+    expect(html).not.toContain("Đang xem nội dung Finance của An");
+    expect(html).toContain("Tổng quan");
     expect(html).toContain("Highlands");
     expect(html).toContain("Xóa khoản chi");
   });

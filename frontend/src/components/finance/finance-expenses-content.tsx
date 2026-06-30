@@ -2,7 +2,7 @@ import React from "react";
 
 import { StatusMessage } from "../ui/status-message";
 import type { FinanceCategory } from "../../types/finance";
-import { formatFinanceDate, formatFinanceMoney } from "./finance-format";
+import { formatFinanceAmountInput, formatFinanceDate, formatFinanceMoney } from "./finance-format";
 import type { FinanceExpenseHighlights } from "./finance-expenses-summary";
 
 export type FinanceExpenseDraft = {
@@ -23,11 +23,11 @@ export type FinanceExpensesContentProps = {
   onDraftChange: (patch: Partial<FinanceExpenseDraft>) => void;
 };
 
-function renderHeroDetail(label: string, value: string) {
+function renderExpenseSummary(label: string, value: string) {
   return (
-    <div className="finance-expenses-hero-stat">
-      <p className="finance-expenses-hero-stat-label">{label}</p>
-      <p className="finance-expenses-hero-stat-value">{value}</p>
+    <div className="finance-expenses-summary-card">
+      <p className="finance-expenses-summary-label">{label}</p>
+      <p className="finance-expenses-summary-value">{value}</p>
     </div>
   );
 }
@@ -51,20 +51,16 @@ export function FinanceExpensesContent({
 
   return (
     <section className="section-stack finance-expenses-surface">
-      <header className="workspace-card finance-expenses-hero">
-        <div className="section-stack finance-expenses-hero-copy">
-          <p className="eyebrow">Tài chính · Chi tiêu</p>
+      <section className="workspace-card section-stack finance-expenses-summary-surface" aria-label="Tổng quan chi tiêu">
+        <div className="section-stack">
           <h2>Tổng chi tiêu tháng này</h2>
-          <div className="finance-expenses-hero-total">
-            <span>{formatFinanceMoney(highlights.totalAmount)}</span>
-          </div>
-          <div className="finance-expenses-hero-stats">
-            {renderHeroDetail("Cao nhất", highestExpenseLabel)}
-            {renderHeroDetail("Danh mục chính", topCategoryLabel)}
-          </div>
+          <p className="finance-expenses-total-value">{formatFinanceMoney(highlights.totalAmount)}</p>
         </div>
-        <div className="finance-expenses-hero-orb" aria-hidden="true" />
-      </header>
+        <div className="finance-expenses-summary-grid">
+          {renderExpenseSummary("Cao nhất", highestExpenseLabel)}
+          {renderExpenseSummary("Danh mục chính", topCategoryLabel)}
+        </div>
+      </section>
 
       <div className="finance-expenses-composer">
         <form className="workspace-card finance-expenses-form" onSubmit={onSubmit}>
@@ -85,12 +81,12 @@ export function FinanceExpensesContent({
               <span>Số tiền (VNĐ)</span>
               <input
                 id="expense-amount"
-                type="number"
-                min="1"
-                step="1000"
+                type="text"
+                inputMode="numeric"
                 required
                 value={draft.amount}
-                onChange={(event) => onDraftChange({ amount: event.target.value })}
+                onChange={(event) => onDraftChange({ amount: formatFinanceAmountInput(event.target.value) })}
+                placeholder="Ví dụ: 1.250.000"
               />
             </label>
 
@@ -133,7 +129,6 @@ export function FinanceExpensesContent({
 
         <aside className="workspace-card finance-expenses-ai-card" aria-label="Khu vực AI phân tích">
           <div className="section-stack">
-            <p className="eyebrow">AI Phân tích</p>
             <h3>AI Phân tích</h3>
             <p>Khu vực AI phân tích sẽ được bổ sung sau. Hiện tại card này giữ chỗ để bám layout của workspace Chi tiêu.</p>
           </div>
