@@ -5,7 +5,6 @@ import { StoryListControls } from "../../components/story-list-controls";
 import { StoryCatalogCard } from "../../components/stories/story-catalog-card";
 import { StoryPagination } from "../../components/stories/story-pagination";
 import { StoryRecommendationShowcase } from "../../components/stories/story-recommendation-showcase";
-import { StoryWorkspaceNav } from "../../components/stories/story-workspace-nav";
 import { PageShell } from "../../components/ui/page-shell";
 import { PageState } from "../../components/ui/page-state";
 import { StatusMessage } from "../../components/ui/status-message";
@@ -133,67 +132,67 @@ export default async function StoriesPage({ searchParams }: StoriesPageProps) {
       eyebrow="Story workspace"
       variant="workspace"
     >
-      <div className="story-workspace-layout">
-        <StoryWorkspaceNav />
-
-        <div className="story-workspace-main section-stack">
-          <section className="workspace-card section-stack" aria-labelledby="story-popular-heading">
-            <div className="section-heading-row">
-              <div className="section-stack">
-                <p className="eyebrow">Nổi bật</p>
-                <h2 id="story-popular-heading">Gợi ý truyện phổ biến</h2>
-              </div>
+      <div className="story-workspace-main section-stack">
+        <section className="workspace-card section-stack" aria-labelledby="story-popular-heading">
+          <div className="section-heading-row">
+            <div className="section-stack">
+              <p className="eyebrow">Nổi bật</p>
+              <h2 id="story-popular-heading">Gợi ý truyện phổ biến</h2>
             </div>
-            {recommendationsHasError ? <StatusMessage tone="error">Không thể tải gợi ý truyện lúc này.</StatusMessage> : null}
-            {recommendations.items.length === 0 ? (
-              <PageState
-                tone="empty"
-                title="Chưa có đủ gợi ý từ cộng đồng"
-                description="Hãy thêm review hoặc quay lại sau khi có thêm dữ liệu từ người dùng app."
-                cta={<Link href="/recommendations">Mở AI tư vấn</Link>}
-              />
-            ) : (
-              <StoryRecommendationShowcase items={recommendations.items} />
-            )}
-          </section>
+          </div>
+          {recommendationsHasError ? <StatusMessage tone="error">Không thể tải gợi ý truyện lúc này.</StatusMessage> : null}
+          {recommendations.items.length === 0 ? (
+            <PageState
+              tone="empty"
+              title="Chưa có đủ gợi ý từ cộng đồng"
+              description="Hãy thêm review hoặc quay lại sau khi có thêm dữ liệu từ người dùng app."
+              cta={
+                <Link href="/recommendations" className="story-ai-cta">
+                  Mở AI tư vấn
+                </Link>
+              }
+            />
+          ) : (
+            <StoryRecommendationShowcase items={recommendations.items} />
+          )}
+        </section>
 
-          <section className="workspace-card section-stack" aria-labelledby="story-catalog-heading">
-            <div className="story-catalog-header">
-              <div className="section-stack">
-                <p className="eyebrow">Thư viện truyện</p>
-                <h2 id="story-catalog-heading">Truyện mới cập nhật</h2>
-                <p className="result-summary">
-                  Tìm thấy {stories.total} truyện{params.hasContent ? " có nội dung đọc" : ""}.
-                </p>
-              </div>
-              <StoryListControls query={params.query} hasContent={params.hasContent} />
+        <section className="workspace-card section-stack" aria-labelledby="story-catalog-heading">
+          <div className="story-catalog-header">
+            <div className="section-stack">
+              <p className="eyebrow">Thư viện truyện</p>
+              <h2 id="story-catalog-heading">Truyện mới cập nhật</h2>
+              <p className="result-summary">
+                Tìm thấy {stories.total} truyện{params.hasContent ? " có nội dung đọc" : ""}.
+              </p>
             </div>
+            <StoryListControls query={params.query} hasContent={params.hasContent} />
+          </div>
 
-            {hasError ? (
-              <StatusMessage tone="error">Không thể tải danh sách truyện lúc này. Đang hiển thị danh sách rỗng tạm thời.</StatusMessage>
-            ) : null}
-            {stories.items.length === 0 ? (
-              <PageState
-                tone="empty"
-                title="Chưa có truyện phù hợp"
-                description="Hãy đổi từ khóa tìm kiếm hoặc bỏ bộ lọc nội dung đọc để xem thêm kết quả."
+          {hasError ? (
+            <StatusMessage tone="error">Không thể tải danh sách truyện lúc này. Đang hiển thị danh sách rỗng tạm thời.</StatusMessage>
+          ) : null}
+          {stories.items.length === 0 ? (
+            <PageState
+              tone="empty"
+              title="Chưa có truyện phù hợp"
+              description="Hãy đổi từ khóa tìm kiếm hoặc bỏ bộ lọc nội dung đọc để xem thêm kết quả."
+            />
+          ) : (
+            <>
+              <div className="story-catalog-grid">
+                {stories.items.map((story) => (
+                  <StoryCatalogCard key={story.id} story={story} />
+                ))}
+              </div>
+              <StoryPagination
+                currentPage={stories.page}
+                totalPages={totalPages}
+                buildHref={(page) => buildPageHref(params, page)}
               />
-            ) : (
-              <>
-                <div className="story-catalog-grid">
-                  {stories.items.map((story) => (
-                    <StoryCatalogCard key={story.id} story={story} />
-                  ))}
-                </div>
-                <StoryPagination
-                  currentPage={stories.page}
-                  totalPages={totalPages}
-                  buildHref={(page) => buildPageHref(params, page)}
-                />
-              </>
-            )}
-          </section>
-        </div>
+            </>
+          )}
+        </section>
       </div>
     </PageShell>
   );

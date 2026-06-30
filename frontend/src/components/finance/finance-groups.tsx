@@ -274,7 +274,16 @@ export function FinanceGroups() {
           </section>
         ) : null}
 
-        {state.dashboard ? <FinanceMemberDashboard dashboard={state.dashboard} canDelete={state.selectedGroup?.currentUserRole === "OWNER"} onDeleteExpense={deleteExpense} onDeleteBudget={deleteBudget} /> : null}
+        {state.dashboard ? (
+          <FinanceMemberDashboard
+            dashboard={state.dashboard}
+            canDelete={state.selectedGroup?.currentUserRole === "OWNER"}
+            onDeleteExpense={deleteExpense}
+            onDeleteBudget={deleteBudget}
+            showBudgetInsights={false}
+            showAdminActions={false}
+          />
+        ) : null}
       </div>
     </section>
   );

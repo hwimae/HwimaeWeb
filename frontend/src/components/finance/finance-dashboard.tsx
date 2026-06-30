@@ -9,7 +9,7 @@ import { BudgetInsights } from "./budget-insights";
 import { CategoryCard } from "./category-card";
 import { buildFinanceCategoryMetrics } from "./finance-dashboard-data";
 import { ExpenseChart } from "./expense-chart";
-import { calculatePercentage, formatFinanceMoney } from "./finance-format";
+import { formatFinanceMoney } from "./finance-format";
 import { RecentTransactions } from "./recent-transaction";
 
 type DashboardState = {
@@ -119,8 +119,7 @@ export function FinanceDashboard() {
           <section className="section-stack" aria-label="Danh mục chi tiêu">
             <div className="section-heading-row">
               <div className="section-stack">
-                <p className="eyebrow">Theo danh mục</p>
-                <h3>Danh mục chi tiêu</h3>
+                <h2>Danh mục chi tiêu</h2>
               </div>
             </div>
             {categoriesWithBudget.length === 0 ? (

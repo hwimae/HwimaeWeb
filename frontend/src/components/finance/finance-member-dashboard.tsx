@@ -14,9 +14,18 @@ type FinanceMemberDashboardProps = {
   canDelete: boolean;
   onDeleteExpense: (expenseId: string) => void;
   onDeleteBudget: (budgetId: string) => void;
+  showBudgetInsights?: boolean;
+  showAdminActions?: boolean;
 };
 
-export function FinanceMemberDashboard({ dashboard, canDelete, onDeleteExpense, onDeleteBudget }: FinanceMemberDashboardProps) {
+export function FinanceMemberDashboard({
+  dashboard,
+  canDelete,
+  onDeleteExpense,
+  onDeleteBudget,
+  showBudgetInsights = true,
+  showAdminActions = true,
+}: FinanceMemberDashboardProps) {
   const categoriesWithBudget = buildFinanceCategoryMetrics(dashboard.categories, dashboard.budgets, dashboard.summary);
   const totalSpent = dashboard.summary.totalAmount;
   const totalBudget = categoriesWithBudget.reduce((sum, category) => sum + category.budget, 0);
@@ -25,10 +34,6 @@ export function FinanceMemberDashboard({ dashboard, canDelete, onDeleteExpense, 
 
   return (
     <section className="section-stack" aria-label={`Nội dung Finance của ${dashboard.member.name}`}>
-      <header className="workspace-card section-stack">
-        <h2>Đang xem nội dung Finance của {dashboard.member.name}</h2>
-        <p>Dữ liệu này dùng chung nguồn với dashboard Finance cá nhân của {dashboard.member.name}.</p>
-      </header>
       <section className="workspace-card section-stack" aria-label="Tổng quan thành viên">
         <h3>Tổng quan</h3>
         <div className="table-wrap">
@@ -55,9 +60,9 @@ export function FinanceMemberDashboard({ dashboard, canDelete, onDeleteExpense, 
         </div>
         <BudgetUsageChart label="Mức sử dụng ngân sách của thành viên" spent={totalSpent} budget={totalBudget} />
       </section>
-      <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} />
+      {showBudgetInsights ? <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} /> : null}
       <RecentTransactions expenses={dashboard.expenses} categories={dashboard.categories} />
-      {canDelete ? (
+      {canDelete && showAdminActions ? (
         <section className="workspace-card section-stack" aria-label="Quản trị dữ liệu thành viên">
           <h3>Quản trị dữ liệu</h3>
           {dashboard.expenses.map((expense) => (

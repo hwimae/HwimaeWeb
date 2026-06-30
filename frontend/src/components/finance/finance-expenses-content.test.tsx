@@ -77,4 +77,26 @@ describe("FinanceExpensesContent", () => {
     expect(html).toContain("Chưa có dữ liệu");
     expect(html).toContain("Chưa có khoản chi nào.");
   });
+
+  it("renders a text money input with numeric keyboard hint", () => {
+    const highlights = buildFinanceExpenseHighlights(categories, [], new Date("2026-06-23T10:00:00.000Z"));
+
+    const html = renderToStaticMarkup(
+      <FinanceExpensesContent
+        categories={categories}
+        highlights={highlights}
+        draft={{ ...draft, amount: "1.250.000" }}
+        isSubmitting={false}
+        submitMessage={null}
+        onSubmit={(event) => event.preventDefault()}
+        onDraftChange={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('id="expense-amount"');
+    expect(html).toContain('type="text"');
+    expect(html).toContain('inputMode="numeric"');
+    expect(html).toContain('value="1.250.000"');
+    expect(html).toContain('placeholder="Ví dụ: 1.250.000"');
+  });
 });

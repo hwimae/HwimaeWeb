@@ -44,7 +44,7 @@ describe("resolveStoryAdvisorErrorMessage", () => {
 });
 
 describe("StoryAdvisorForm", () => {
-  it("renders browser-search CTA text before any result", () => {
+  it("renders browser-search CTA text inside the shared form surface before any result", () => {
     const html = renderToStaticMarkup(<StoryAdvisorForm />);
 
     expect(ADVISOR_QUICK_PROMPTS).toEqual([
@@ -54,11 +54,14 @@ describe("StoryAdvisorForm", () => {
       "Điền văn",
     ]);
     expect(html).toContain("Tìm truyện cùng AI");
+    expect(html).toContain("form-surface");
     expect(html).toContain("story-advisor-card");
     expect(html).not.toContain("story-advisor-hero");
     expect(html).toContain("Tạo vector và tìm truyện");
     expect(html).toContain("Trình duyệt sẽ tạo vector");
     expect(html).toContain("Gợi ý nhanh");
+    expect(html).toContain("story-advisor-field");
+    expect(html).toContain("story-advisor-textarea-label");
     expect(html).not.toContain("StoryRec AI");
   });
 });

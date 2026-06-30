@@ -35,13 +35,13 @@ describe("FinanceShell", () => {
     expect(html).not.toContain("finance-shell-layout");
   });
 
-  it("renders a sidebar shell for the finance groups route", async () => {
+  it("renders the groups route with the same horizontal finance nav", async () => {
     const html = await renderShellAtPath("/finance/groups", "Nội dung nhóm");
 
-    expect(html).toContain("finance-shell-layout");
-    expect(html).toContain("finance-shell-sidebar");
-    expect(html).toContain("finance-shell-main");
-    expect(html).toContain("finance-nav-rail");
+    expect(html).toContain("Nhóm tài chính");
+    expect(html).toContain("finance-nav");
+    expect(html).not.toContain("finance-nav-rail");
+    expect(html).not.toContain("finance-shell-layout");
     expect(html).toContain("Nội dung nhóm");
   });
 });

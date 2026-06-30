@@ -20,7 +20,12 @@ vi.mock("@/lib/auth", () => ({
   parseAuthUser: (input: unknown) => input,
 }));
 
-import { canAccessPath, isPublicAuthPath, isPublicPath } from "./auth-gate";
+import {
+  canAccessPath,
+  isPublicAuthPath,
+  isPublicPath,
+  shouldRedirectAuthenticatedUserFromAuthPath,
+} from "./auth-routing";
 
 const approvedUser = {
   id: "user1",
@@ -38,6 +43,11 @@ const approvedAdmin = {
   role: "ADMIN" as const,
 };
 
+const pendingUser = {
+  ...approvedUser,
+  status: "PENDING" as const,
+};
+
 describe("auth gate route helpers", () => {
   it("treats only login and register as public auth paths", () => {
     expect(isPublicAuthPath("/login")).toBe(true);
@@ -46,14 +56,14 @@ describe("auth gate route helpers", () => {
     expect(isPublicAuthPath("/stories")).toBe(false);
   });
 
-  it("allows public content routes without login", () => {
+  it("requires guests to authenticate before story routes", () => {
     expect(isPublicPath("/")).toBe(true);
-    expect(isPublicPath("/modules")).toBe(true);
-    expect(isPublicPath("/movie")).toBe(true);
-    expect(isPublicPath("/recommendations")).toBe(true);
-    expect(isPublicPath("/stories")).toBe(true);
-    expect(isPublicPath("/stories/story1")).toBe(true);
-    expect(canAccessPath("/stories", null)).toBe(true);
+    expect(isPublicPath("/stories")).toBe(false);
+    expect(isPublicPath("/stories/story1")).toBe(false);
+    expect(isPublicPath("/movie")).toBe(false);
+    expect(isPublicPath("/recommendations")).toBe(false);
+    expect(isPublicPath("/modules")).toBe(false);
+    expect(canAccessPath("/stories", null)).toBe(false);
   });
 
   it("requires an approved user for protected routes", () => {
@@ -65,5 +75,12 @@ describe("auth gate route helpers", () => {
   it("requires admin role for admin routes", () => {
     expect(canAccessPath("/admin/users", approvedUser)).toBe(false);
     expect(canAccessPath("/admin/users", approvedAdmin)).toBe(true);
+  });
+
+  it("marks only approved users as off-limits for auth pages", () => {
+    expect(shouldRedirectAuthenticatedUserFromAuthPath("/login", approvedUser)).toBe(true);
+    expect(shouldRedirectAuthenticatedUserFromAuthPath("/register", approvedUser)).toBe(true);
+    expect(shouldRedirectAuthenticatedUserFromAuthPath("/login", pendingUser)).toBe(false);
+    expect(shouldRedirectAuthenticatedUserFromAuthPath("/", approvedUser)).toBe(false);
   });
 });

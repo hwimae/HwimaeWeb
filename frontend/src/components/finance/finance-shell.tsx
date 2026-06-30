@@ -41,23 +41,13 @@ type FinanceShellProps = {
 export function FinanceShell({ children }: FinanceShellProps) {
   const pathname = usePathname();
   const copy = PAGE_COPY[pathname] ?? DEFAULT_COPY;
-  const isGroupsRoute = pathname === "/finance/groups" || pathname.startsWith("/finance/groups/");
 
   return (
     <PageShell title={copy.title} description={copy.description} eyebrow="Finance workspace" variant="workspace">
-      {isGroupsRoute ? (
-        <div className="finance-shell-layout">
-          <aside className="finance-shell-sidebar workspace-card" aria-label="Khu vực điều hướng Finance">
-            <FinanceNav variant="rail" />
-          </aside>
-          <div className="finance-shell-main section-stack">{children}</div>
-        </div>
-      ) : (
-        <div className="section-stack">
-          <FinanceNav />
-          {children}
-        </div>
-      )}
+      <div className="section-stack">
+        <FinanceNav />
+        {children}
+      </div>
     </PageShell>
   );
 }

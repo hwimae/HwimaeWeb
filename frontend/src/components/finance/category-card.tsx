@@ -20,16 +20,17 @@ export function CategoryCard({ category }: CategoryCardProps) {
   const normalizedPercentage = hasBudget ? Math.min(percentage, 100) : 0;
   const isOverBudget = hasBudget && category.spent > category.budget;
   const categoryIcon = category.icon || category.name.slice(0, 1).toUpperCase();
+  const iconTint = category.color ? `${category.color}22` : undefined;
 
   return (
     <Card as="article" className="section-stack finance-category-card" shadow="sm">
       <CardBody className="section-stack finance-category-card-body">
         <header className="finance-category-card-header">
           <div className="finance-category-card-title">
-            <span className="finance-category-icon" aria-hidden="true">
+            <span className="finance-category-icon" style={{ backgroundColor: iconTint, color: category.color ?? undefined }} aria-hidden="true">
               {categoryIcon}
             </span>
-            <div className="section-stack">
+            <div className="section-stack finance-category-card-copy">
               <h3>{category.name}</h3>
               <p>Đã chi {formatFinanceMoney(category.spent)}</p>
             </div>
@@ -49,6 +50,9 @@ export function CategoryCard({ category }: CategoryCardProps) {
           </span>
         </div>
 
+        <div className="finance-category-progress-track" aria-hidden="true">
+          <span className="finance-category-progress-fill" style={{ width: `${normalizedPercentage}%` }} />
+        </div>
         <progress
           className="finance-category-progress"
           value={normalizedPercentage}

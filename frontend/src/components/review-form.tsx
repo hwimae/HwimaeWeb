@@ -1,9 +1,10 @@
 "use client";
 
-import { Button, Card, CardBody, CardHeader, Radio, RadioGroup } from "@heroui/react";
-import { FormEvent, useId, useRef, useState } from "react";
+import { Button, Radio, RadioGroup } from "@heroui/react";
+import React, { FormEvent, useId, useRef, useState } from "react";
 
 import { FormField } from "@/components/ui/form-field";
+import { FormSurface } from "@/components/ui/form-surface";
 import { StatusMessage } from "@/components/ui/status-message";
 import { apiPost } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
@@ -53,66 +54,62 @@ export function ReviewForm({ storyId }: ReviewFormProps) {
   }
 
   return (
-    <section aria-labelledby="review-title" className="section-stack workspace-card review-form-surface">
-      <div className="section-stack">
-        <p className="eyebrow">Đánh giá</p>
-        <h2 id="review-title">Viết review truyện</h2>
-        <p className="result-summary">Chia sẻ cảm nhận để hệ thống hiểu gu đọc của bạn hơn.</p>
-      </div>
-      <Card className="glass-card" shadow="sm">
-        <CardHeader>
-          <p className="result-summary">Điểm số và nhận xét của bạn sẽ giúp khu AI tư vấn đề xuất truyện chính xác hơn.</p>
-        </CardHeader>
-        <CardBody>
-          <form onSubmit={handleSubmit} className="section-stack">
-            <RadioGroup
-              label="Điểm đánh giá"
-              orientation="horizontal"
-              value={String(rating)}
-              onValueChange={(value) => setRating(Number(value))}
-              isDisabled={isSubmitting}
-              color="primary"
-            >
-              {STAR_VALUES.map((star) => (
-                <Radio key={star} value={String(star)}>
-                  {star} sao
-                </Radio>
-              ))}
-            </RadioGroup>
+    <section aria-labelledby="review-title" className="section-stack review-form-surface">
+      <FormSurface className="workspace-card">
+        <div className="form-surface-heading">
+          <p className="eyebrow">Đánh giá</p>
+          <h2 id="review-title">Viết review truyện</h2>
+          <p className="result-summary">Chia sẻ cảm nhận để hệ thống hiểu gu đọc của bạn hơn.</p>
+        </div>
 
-            <FormField
-              id={titleId}
-              label="Tiêu đề review"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              required
-              maxLength={200}
-              aria-describedby={(error ?? message) ? statusId : undefined}
-            />
+        <form onSubmit={handleSubmit} className="section-stack">
+          <RadioGroup
+            label="Điểm đánh giá"
+            orientation="horizontal"
+            value={String(rating)}
+            onValueChange={(value) => setRating(Number(value))}
+            isDisabled={isSubmitting}
+            color="primary"
+          >
+            {STAR_VALUES.map((star) => (
+              <Radio key={star} value={String(star)}>
+                {star} sao
+              </Radio>
+            ))}
+          </RadioGroup>
 
-            <FormField
-              id={contentId}
-              kind="textarea"
-              label="Nội dung review"
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              required
-              maxLength={5000}
-              minRows={5}
-              aria-describedby={(error ?? message) ? statusId : undefined}
-            />
+          <FormField
+            id={titleId}
+            label="Tiêu đề review"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            required
+            maxLength={200}
+            aria-describedby={(error ?? message) ? statusId : undefined}
+          />
 
-            <Button color="primary" type="submit" isLoading={isSubmitting}>
-              {isSubmitting ? "Đang gửi..." : "Gửi review"}
-            </Button>
+          <FormField
+            id={contentId}
+            kind="textarea"
+            label="Nội dung review"
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            required
+            maxLength={5000}
+            minRows={5}
+            aria-describedby={(error ?? message) ? statusId : undefined}
+          />
 
-            <div id={statusId} ref={statusRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
-              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-              {!error && message ? <StatusMessage tone="success">{message}</StatusMessage> : null}
-            </div>
-          </form>
-        </CardBody>
-      </Card>
+          <Button color="primary" type="submit" isLoading={isSubmitting}>
+            {isSubmitting ? "Đang gửi..." : "Gửi review"}
+          </Button>
+
+          <div id={statusId} ref={statusRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
+            {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+            {!error && message ? <StatusMessage tone="success">{message}</StatusMessage> : null}
+          </div>
+        </form>
+      </FormSurface>
     </section>
   );
 }

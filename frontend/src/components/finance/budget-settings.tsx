@@ -5,8 +5,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { StatusMessage } from "../ui/status-message";
 import { deleteFinanceBudget, getFinanceCategories, listFinanceBudgets, upsertFinanceBudget } from "../../lib/finance-api";
 import type { FinanceBudget, FinanceCategory } from "../../types/finance";
+import { BudgetSettingsContent } from "./budget-settings-content";
 import { buildBudgetSavePlans } from "./budget-settings-data";
-import { formatFinanceMoney } from "./finance-format";
+import { parseFinanceAmountInput } from "./finance-format";
+import {
+  FINANCE_SUBMIT_TIMEOUT_MS,
+  isFinanceSubmitTimeoutError,
+  runFinanceSubmitWithTimeout,
+} from "./finance-submit-recovery";
 
 type BudgetDrafts = Record<string, number>;
 
@@ -33,41 +39,45 @@ export function BudgetSettings() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     return () => {
       mountedRef.current = false;
       saveAbortRef.current?.abort();
     };
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-    const requestOptions = { signal: controller.signal };
+  async function loadBudgetData(signal?: AbortSignal): Promise<boolean> {
+    try {
+      const [nextCategories, nextBudgets] = await Promise.all([
+        getFinanceCategories({ signal }),
+        listFinanceBudgets({ signal }),
+      ]);
 
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const [nextCategories, nextBudgets] = await Promise.all([getFinanceCategories(requestOptions), listFinanceBudgets(requestOptions)]);
-        if (!isMounted) return;
-
-        setCategories(nextCategories);
-        setBudgets(nextBudgets);
-        setDrafts(toBudgetDrafts(nextCategories, nextBudgets));
-      } catch (error) {
-        if (isAbortError(error) || !isMounted) return;
-        setError(error instanceof Error ? error.message : "Không thể tải ngân sách.");
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      if (!mountedRef.current || signal?.aborted) return false;
+      setCategories(nextCategories);
+      setBudgets(nextBudgets);
+      setDrafts(toBudgetDrafts(nextCategories, nextBudgets));
+      setError(null);
+      return true;
+    } catch (error) {
+      if (isAbortError(error) || !mountedRef.current || signal?.aborted) return false;
+      setError(error instanceof Error ? error.message : "Không thể tải ngân sách.");
+      return false;
+    } finally {
+      if (mountedRef.current && !signal?.aborted) {
+        setIsLoading(false);
       }
     }
+  }
 
-    void loadData();
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
+    void loadBudgetData(controller.signal);
 
     return () => {
-      isMounted = false;
       controller.abort();
     };
   }, []);
@@ -76,45 +86,72 @@ export function BudgetSettings() {
     saveAbortRef.current?.abort();
     const controller = new AbortController();
     saveAbortRef.current = controller;
-    const requestOptions = { signal: controller.signal };
 
     setIsSaving(true);
     setMessage(null);
     setError(null);
 
     try {
-      const plans = buildBudgetSavePlans(categories, budgets, drafts);
-      await Promise.all(
-        plans.map((plan) => {
-          if (plan.type === "delete") return deleteFinanceBudget(plan.budgetId, requestOptions);
-          if (plan.type === "update") {
-            return upsertFinanceBudget({ categoryId: plan.categoryId, period: "monthly", limitAmount: plan.limitAmount, alertThreshold: 0.8 }, requestOptions);
-          }
-          return upsertFinanceBudget({ categoryId: plan.categoryId, period: "monthly", limitAmount: plan.limitAmount, alertThreshold: 0.8 }, requestOptions);
-        }),
+      await runFinanceSubmitWithTimeout(
+        controller,
+        async (signal) => {
+          const requestOptions = { signal };
+          const plans = buildBudgetSavePlans(categories, budgets, drafts);
+
+          await Promise.all(
+            plans.map((plan) => {
+              if (plan.type === "delete") return deleteFinanceBudget(plan.budgetId, requestOptions);
+              return upsertFinanceBudget(
+                {
+                  categoryId: plan.categoryId,
+                  period: "monthly",
+                  limitAmount: plan.limitAmount,
+                  alertThreshold: 0.8,
+                },
+                requestOptions,
+              );
+            }),
+          );
+
+          await loadBudgetData(signal);
+        },
+        FINANCE_SUBMIT_TIMEOUT_MS,
       );
-      const [nextCategories, nextBudgets] = await Promise.all([getFinanceCategories(requestOptions), listFinanceBudgets(requestOptions)]);
+
       if (!mountedRef.current || controller.signal.aborted) return;
-      setCategories(nextCategories);
-      setBudgets(nextBudgets);
-      setDrafts(toBudgetDrafts(nextCategories, nextBudgets));
       setMessage("Đã lưu thay đổi ngân sách.");
     } catch (error) {
-      if (isAbortError(error) || !mountedRef.current) return;
+      if (!mountedRef.current || isAbortError(error) || controller.signal.aborted) return;
+
+      if (isFinanceSubmitTimeoutError(error)) {
+        setError("Hệ thống đang chậm, đang tải lại dữ liệu ngân sách...");
+        const didReload = await loadBudgetData();
+        if (!mountedRef.current) return;
+
+        if (didReload) {
+          setMessage("Dữ liệu ngân sách đã được tải lại. Vui lòng thử lưu lại nếu cần.");
+          setError(null);
+        } else {
+          setMessage(null);
+          setError("Không thể tải lại dữ liệu ngân sách. Vui lòng thử lại sau.");
+        }
+        return;
+      }
+
       setError(error instanceof Error ? error.message : "Không thể lưu ngân sách.");
     } finally {
-      if (mountedRef.current && !controller.signal.aborted) {
-        setIsSaving(false);
-      }
       if (saveAbortRef.current === controller) {
         saveAbortRef.current = null;
+        if (mountedRef.current) {
+          setIsSaving(false);
+        }
       }
     }
   }
 
   function handleBudgetChange(categoryId: string, value: string) {
-    const normalized = value.replace(/[^\d]/g, "");
-    setDrafts((current) => ({ ...current, [categoryId]: normalized.length > 0 ? Number(normalized) : 0 }));
+    const parsed = parseFinanceAmountInput(value) ?? 0;
+    setDrafts((current) => ({ ...current, [categoryId]: parsed }));
   }
 
   return (
@@ -130,56 +167,16 @@ export function BudgetSettings() {
       {!isLoading && !error && categories.length === 0 ? <StatusMessage>Chưa có danh mục để cấu hình ngân sách.</StatusMessage> : null}
 
       {!isLoading && !error && categories.length > 0 ? (
-        <form className="workspace-card section-stack" onSubmit={(event) => {
-          event.preventDefault();
-          void handleSave();
-        }}>
-          <div className="section-stack">
-            <h3>Cấu hình hạn mức</h3>
-            <p>Nhập ngân sách theo từng danh mục, để trống hoặc nhập 0 nếu muốn bỏ hạn mức.</p>
-          </div>
-
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Danh mục</th>
-                  <th scope="col">Ngân sách hiện tại</th>
-                  <th scope="col">Hạn mức mới</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => {
-                  const currentBudget = drafts[category.id] ?? 0;
-
-                  return (
-                    <tr key={category.id}>
-                      <td>{category.name}</td>
-                      <td>{formatFinanceMoney(currentBudget)}</td>
-                      <td>
-                        <label htmlFor={`budget-${category.id}`}>Hạn mức {category.name}</label>
-                        <input
-                          id={`budget-${category.id}`}
-                          type="text"
-                          inputMode="numeric"
-                          value={currentBudget === 0 ? "" : String(currentBudget)}
-                          onChange={(event) => handleBudgetChange(category.id, event.target.value)}
-                          placeholder="Ví dụ: 1000000"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <button type="submit" disabled={isSaving}>
-              {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
-            </button>
-          </div>
-        </form>
+        <BudgetSettingsContent
+          categories={categories}
+          drafts={drafts}
+          isSaving={isSaving}
+          onDraftChange={handleBudgetChange}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave();
+          }}
+        />
       ) : null}
     </section>
   );

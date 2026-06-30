@@ -1,10 +1,11 @@
 "use client";
 
-import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import React, { FormEvent, useRef, useState } from "react";
 
 import { FormField } from "@/components/ui/form-field";
+import { FormSurface } from "@/components/ui/form-surface";
 import { PageShell } from "@/components/ui/page-shell";
 import { StatusMessage } from "@/components/ui/status-message";
 import { apiPost } from "@/lib/api";
@@ -52,58 +53,57 @@ export default function RegisterPage() {
       variant="workspace"
     >
       <div className="auth-layout auth-layout-compact">
-        <Card className="auth-card" shadow="sm">
-          <CardHeader>
+        <FormSurface className="auth-card">
+          <div className="form-surface-heading">
             <h2>Tạo tài khoản mới</h2>
-          </CardHeader>
-          <CardBody>
-            <form onSubmit={handleSubmit} className="section-stack">
-              <FormField
-                id="name"
-                name="name"
-                type="text"
-                label="Họ tên"
-                autoComplete="name"
-                required
-                aria-describedby={error ? errorRegionId : undefined}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
+          </div>
 
-              <FormField
-                id="email"
-                name="email"
-                type="email"
-                label="Email"
-                autoComplete="email"
-                required
-                aria-describedby={error ? errorRegionId : undefined}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
+          <form onSubmit={handleSubmit} className="section-stack">
+            <FormField
+              id="name"
+              name="name"
+              type="text"
+              label="Họ tên"
+              autoComplete="name"
+              required
+              aria-describedby={error ? errorRegionId : undefined}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
 
-              <FormField
-                id="password"
-                name="password"
-                type="password"
-                label="Mật khẩu"
-                autoComplete="new-password"
-                required
-                aria-describedby={error ? errorRegionId : undefined}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
+            <FormField
+              id="email"
+              name="email"
+              type="email"
+              label="Email"
+              autoComplete="email"
+              required
+              aria-describedby={error ? errorRegionId : undefined}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
 
-              <div id={errorRegionId} ref={errorRegionRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
-                {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
-              </div>
+            <FormField
+              id="password"
+              name="password"
+              type="password"
+              label="Mật khẩu"
+              autoComplete="new-password"
+              required
+              aria-describedby={error ? errorRegionId : undefined}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
 
-              <Button color="primary" type="submit" isLoading={isSubmitting}>
-                {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
-              </Button>
-            </form>
-          </CardBody>
-        </Card>
+            <div id={errorRegionId} ref={errorRegionRef} aria-live="assertive" aria-atomic="true" tabIndex={-1}>
+              {error ? <StatusMessage tone="error">{error}</StatusMessage> : null}
+            </div>
+
+            <Button color="primary" type="submit" isLoading={isSubmitting}>
+              {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
+            </Button>
+          </form>
+        </FormSurface>
       </div>
     </PageShell>
   );

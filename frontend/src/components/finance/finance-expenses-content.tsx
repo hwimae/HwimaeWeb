@@ -2,7 +2,7 @@ import React from "react";
 
 import { StatusMessage } from "../ui/status-message";
 import type { FinanceCategory } from "../../types/finance";
-import { formatFinanceDate, formatFinanceMoney } from "./finance-format";
+import { formatFinanceAmountInput, formatFinanceDate, formatFinanceMoney } from "./finance-format";
 import type { FinanceExpenseHighlights } from "./finance-expenses-summary";
 
 export type FinanceExpenseDraft = {
@@ -81,12 +81,12 @@ export function FinanceExpensesContent({
               <span>Số tiền (VNĐ)</span>
               <input
                 id="expense-amount"
-                type="number"
-                min="1"
-                step="1000"
+                type="text"
+                inputMode="numeric"
                 required
                 value={draft.amount}
-                onChange={(event) => onDraftChange({ amount: event.target.value })}
+                onChange={(event) => onDraftChange({ amount: formatFinanceAmountInput(event.target.value) })}
+                placeholder="Ví dụ: 1.250.000"
               />
             </label>
 

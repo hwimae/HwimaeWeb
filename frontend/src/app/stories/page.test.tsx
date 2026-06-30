@@ -16,7 +16,7 @@ import StoriesPage from "./page";
 import { apiGet } from "../../lib/api";
 
 describe("StoriesPage", () => {
-  it("renders the new workspace layout without the decorative feature hero", async () => {
+  it("renders the story workspace content without the decorative feature hero", async () => {
     vi.mocked(apiGet)
       .mockResolvedValueOnce({
         items: [
@@ -67,7 +67,8 @@ describe("StoriesPage", () => {
     const element = await StoriesPage({ searchParams: Promise.resolve({ page: "2" }) });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("story-workspace-layout");
+    expect(html).toContain("story-workspace-main");
+    expect(html).not.toContain("story-workspace-nav-sidebar");
     expect(html).not.toContain("story-feature-hero");
     expect(html).toContain("Gợi ý truyện phổ biến");
     expect(html).toContain("Truyện mới cập nhật");
