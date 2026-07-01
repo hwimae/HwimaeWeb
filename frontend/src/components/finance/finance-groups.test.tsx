@@ -35,6 +35,9 @@ describe("Finance Groups UI", () => {
 
     expect(html).toContain("Tạo nhóm mới");
     expect(html).toContain("Danh sách nhóm");
+    expect(html).toContain("finance-groups-chooser");
+    expect(html).toContain("finance-groups-create-form");
+    expect(html).toContain("finance-groups-selection-stack");
     expect(html).toContain("Bạn chưa tham gia nhóm tài chính nào");
     expect(html).toContain("Tạo nhóm đầu tiên");
   });
@@ -58,8 +61,10 @@ describe("Finance Groups UI", () => {
     );
 
     expect(detailHtml).toContain("Chi tiết nhóm");
+    expect(detailHtml).toContain("finance-groups-context-stack");
     expect(detailHtml).toContain("2 thành viên");
     expect(selectorHtml).toContain("Chọn thành viên để xem");
+    expect(selectorHtml).toContain("finance-groups-detail-stack");
     expect(selectorHtml).toContain("An");
     expect(selectorHtml).toContain('aria-pressed="true"');
   });

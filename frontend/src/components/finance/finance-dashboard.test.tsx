@@ -9,6 +9,9 @@ describe("FinanceDashboard", () => {
     const html = renderToStaticMarkup(<FinanceDashboard />);
 
     expect(html).toContain("finance-dashboard");
+    expect(html).toContain("finance-dashboard-priority-stack");
+    expect(html).toContain("finance-dashboard-analysis-grid");
+    expect(html).toContain("finance-dashboard-support-stack");
     expect(html).not.toContain("finance-dashboard-hero");
     expect(html).not.toContain("Tổng quan Tài chính");
     expect(html).not.toContain("Thêm giao dịch");

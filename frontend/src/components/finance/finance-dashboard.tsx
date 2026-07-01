@@ -98,44 +98,55 @@ export function FinanceDashboard() {
   const remaining = Math.max(totalBudget - totalSpent, 0);
   const budgetedCategoryCount = categoriesWithBudget.filter((category) => category.budget > 0).length;
 
+  const isReady = !state.isLoading && !state.error;
+
   return (
     <section className="section-stack finance-dashboard">
-      {state.isLoading ? <StatusMessage>Đang tải dữ liệu tài chính...</StatusMessage> : null}
-      {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}
-
-      {!state.isLoading && !state.error ? (
-        <>
-          <section className="finance-stat-grid" aria-label="Tổng quan ngân sách">
+      <div className="finance-dashboard-priority-stack">
+        {state.isLoading ? <StatusMessage>Đang tải dữ liệu tài chính...</StatusMessage> : null}
+        {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}
+        {isReady ? (
+          <section className="finance-stat-grid finance-dashboard-stat-grid" aria-label="Tổng quan ngân sách">
             <FinanceStatCard label="Tổng chi tiêu" value={formatFinanceMoney(totalSpent)} detail="Toàn bộ dữ liệu đã ghi nhận" tone="spending" />
             <FinanceStatCard label="Ngân sách" value={formatFinanceMoney(totalBudget)} detail={`${budgetedCategoryCount} danh mục có hạn mức`} tone="budget" />
             <FinanceStatCard label="Còn lại" value={formatFinanceMoney(remaining)} detail="Phần ngân sách chưa sử dụng" tone="remaining" />
           </section>
+        ) : null}
+      </div>
 
-          <section className="finance-chart-grid" aria-label="Biểu đồ và cảnh báo ngân sách">
+      <section className="finance-dashboard-analysis-grid" aria-label="Biểu đồ và cảnh báo ngân sách">
+        {isReady ? (
+          <>
             <ExpenseChart categories={categoriesWithBudget} />
             <BudgetInsights categories={categoriesWithBudget} totalSpent={totalSpent} totalBudget={totalBudget} />
-          </section>
+          </>
+        ) : null}
+      </section>
 
-          <section className="section-stack" aria-label="Danh mục chi tiêu">
-            <div className="section-heading-row">
-              <div className="section-stack">
-                <h2>Danh mục chi tiêu</h2>
+      <div className="finance-dashboard-support-stack">
+        {isReady ? (
+          <>
+            <section className="section-stack finance-dashboard-categories" aria-label="Danh mục chi tiêu">
+              <div className="section-heading-row">
+                <div className="section-stack">
+                  <h2>Danh mục chi tiêu</h2>
+                </div>
               </div>
-            </div>
-            {categoriesWithBudget.length === 0 ? (
-              <StatusMessage>Chưa có danh mục hoặc ngân sách để hiển thị.</StatusMessage>
-            ) : (
-              <div className="card-grid finance-category-grid">
-                {categoriesWithBudget.map((category) => (
-                  <CategoryCard key={category.id} category={category} />
-                ))}
-              </div>
-            )}
-          </section>
+              {categoriesWithBudget.length === 0 ? (
+                <StatusMessage>Chưa có danh mục hoặc ngân sách để hiển thị.</StatusMessage>
+              ) : (
+                <div className="card-grid finance-category-grid">
+                  {categoriesWithBudget.map((category) => (
+                    <CategoryCard key={category.id} category={category} />
+                  ))}
+                </div>
+              )}
+            </section>
 
-          <RecentTransactions expenses={state.expenses} categories={state.categories} />
-        </>
-      ) : null}
+            <RecentTransactions expenses={state.expenses} categories={state.categories} />
+          </>
+        ) : null}
+      </div>
     </section>
   );
 }

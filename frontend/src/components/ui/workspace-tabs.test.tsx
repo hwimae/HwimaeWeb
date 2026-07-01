@@ -25,6 +25,8 @@ describe("WorkspaceTabs", () => {
     expect(html).toContain('href="/recommendations"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain("workspace-nav-link");
+    expect(html).toContain("workspace-tabs-track");
+    expect(html).toContain("workspace-tabs-track-horizontal");
     expect(html).not.toContain("color=\"primary\"");
   });
 

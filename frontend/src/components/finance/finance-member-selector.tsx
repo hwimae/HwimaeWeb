@@ -13,7 +13,7 @@ type FinanceMemberSelectorProps = {
 
 export function FinanceMemberSelector({ members, selectedMemberUserId, onSelectMember }: FinanceMemberSelectorProps) {
   return (
-    <section className="workspace-card section-stack finance-member-selector-card" aria-label="Chọn thành viên để xem Finance">
+    <section className="workspace-card section-stack finance-member-selector-card finance-groups-detail-stack" aria-label="Chọn thành viên để xem Finance">
       <div className="section-stack">
         <h3>Chọn thành viên để xem</h3>
         <p>Bạn đang mở dashboard tài chính cá nhân của từng thành viên ngay trong cùng một nhóm.</p>

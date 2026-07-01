@@ -44,9 +44,11 @@ export function FinanceShell({ children }: FinanceShellProps) {
 
   return (
     <PageShell title={copy.title} description={copy.description} eyebrow="Finance workspace" variant="workspace">
-      <div className="section-stack">
-        <FinanceNav />
-        {children}
+      <div className="finance-shell-frame">
+        <div className="finance-shell-nav-row">
+          <FinanceNav />
+        </div>
+        <div className="finance-shell-content">{children}</div>
       </div>
     </PageShell>
   );

@@ -45,7 +45,7 @@ export function RecentTransactions({ expenses, categories }: RecentTransactionsP
                   <div className="finance-transaction-avatar" style={{ backgroundColor: avatarTint, color: category?.color ?? undefined }} aria-hidden="true">
                     {category?.icon || merchantName.slice(0, 1).toUpperCase()}
                   </div>
-                  <div className="finance-transaction-main">
+                  <div className="finance-transaction-main finance-transaction-copy">
                     <h3>{merchantName}</h3>
                     <p>
                       {formatFinanceDate(expense.spentAt)} · {category?.name || "Khác"}

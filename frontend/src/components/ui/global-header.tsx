@@ -45,11 +45,56 @@ export function GlobalHeader() {
   return (
     <header className="global-header">
       <div className="global-header-shell">
-        <HeroLink as={NextLink} href="/" color="foreground" className="global-header-brand">
-          <span className="global-header-brand-mark">Hwimae</span>
-        </HeroLink>
+        <div className="global-header-topbar">
+          <HeroLink as={NextLink} href="/" color="foreground" className="global-header-brand">
+            <span className="global-header-brand-mark">Hwimae</span>
+          </HeroLink>
 
-        <nav className="global-header-menu" aria-label="Điều hướng chính">
+          <div className="global-header-actions global-header-auth-actions">
+            {!shouldHideAuthActions &&
+              (user ? (
+                <>
+                  <div className="global-header-account">
+                    <CircleUserRound size={16} />
+                    <span className="global-header-account-name">{user.name}</span>
+                  </div>
+                  <Button
+                    color="primary"
+                    variant="flat"
+                    radius="full"
+                    className="global-header-auth-button global-header-register-button"
+                    onPress={logout}
+                  >
+                    Đăng xuất
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    as={NextLink}
+                    href="/login"
+                    color="primary"
+                    variant="light"
+                    radius="full"
+                    className="global-header-auth-button global-header-login-button"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    as={NextLink}
+                    href="/register"
+                    color="primary"
+                    radius="full"
+                    className="global-header-auth-button global-header-register-button"
+                  >
+                    Register
+                  </Button>
+                </>
+              ))}
+          </div>
+        </div>
+
+        <nav className="global-header-menu global-header-module-rail" aria-label="Điều hướng chính">
           {links.map((item) => {
             const isActive = isModuleActive(pathname, item.href);
 
@@ -67,49 +112,6 @@ export function GlobalHeader() {
             );
           })}
         </nav>
-
-        <div className="global-header-actions">
-          {!shouldHideAuthActions &&
-            (user ? (
-              <>
-                <div className="global-header-account">
-                  <CircleUserRound size={16} />
-                  <span>{user.name}</span>
-                </div>
-                <Button
-                  color="primary"
-                  variant="flat"
-                  radius="full"
-                  className="global-header-auth-button global-header-register-button"
-                  onPress={logout}
-                >
-                  Đăng xuất
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  as={NextLink}
-                  href="/login"
-                  color="primary"
-                  variant="light"
-                  radius="full"
-                  className="global-header-auth-button global-header-login-button"
-                >
-                  Login
-                </Button>
-                <Button
-                  as={NextLink}
-                  href="/register"
-                  color="primary"
-                  radius="full"
-                  className="global-header-auth-button global-header-register-button"
-                >
-                  Register
-                </Button>
-              </>
-            ))}
-        </div>
       </div>
     </header>
   );
