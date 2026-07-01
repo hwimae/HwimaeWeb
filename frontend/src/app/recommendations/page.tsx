@@ -1,6 +1,6 @@
 import React from "react";
 
-import { StoryAdvisorForm } from "../../components/story-advisor-form";
+import { StoryAdvisorPanel } from "../../components/story-advisor-panel";
 import { PageShell } from "../../components/ui/page-shell";
 
 export default function RecommendationsPage() {
@@ -11,7 +11,7 @@ export default function RecommendationsPage() {
       eyebrow="Story workspace"
       variant="workspace"
     >
-      <StoryAdvisorForm />
+      <StoryAdvisorPanel />
     </PageShell>
   );
 }
