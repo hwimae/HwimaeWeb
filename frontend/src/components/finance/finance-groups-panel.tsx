@@ -26,11 +26,11 @@ export function FinanceGroupsPanel({ groups, selectedGroupId, isLoading, onSelec
   }
 
   return (
-    <aside className="finance-groups-sidebar-column section-stack" aria-label="Quản lý nhóm tài chính">
+    <aside className="finance-groups-sidebar-column finance-groups-chooser section-stack" aria-label="Quản lý nhóm tài chính">
       <section className="workspace-card section-stack finance-groups-create-card">
         <h2>Tạo nhóm mới</h2>
         <p>Mời bạn bè hoặc người thân cùng theo dõi dashboard tài chính cá nhân trong một không gian chung.</p>
-        <form className="section-stack" onSubmit={handleSubmit}>
+        <form className="section-stack finance-groups-create-form" onSubmit={handleSubmit}>
           <label className="form-field" htmlFor="finance-group-name">
             <span>Tên nhóm</span>
             <input id="finance-group-name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -39,7 +39,7 @@ export function FinanceGroupsPanel({ groups, selectedGroupId, isLoading, onSelec
         </form>
       </section>
 
-      <section className="workspace-card section-stack finance-groups-list-card" aria-label="Danh sách nhóm">
+      <section className="workspace-card section-stack finance-groups-list-card finance-groups-selection-stack" aria-label="Danh sách nhóm">
         <div className="section-stack">
           <h2>Danh sách nhóm</h2>
           <p>Chọn nhóm để xem thành viên và mở dashboard của từng người.</p>

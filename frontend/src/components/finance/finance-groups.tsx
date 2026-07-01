@@ -238,7 +238,7 @@ export function FinanceGroups() {
   }
 
   return (
-    <section className="finance-groups-layout" aria-label="Workspace nhóm tài chính">
+    <section className="finance-groups-layout finance-groups-flow" aria-label="Workspace nhóm tài chính">
       {state.error || state.message ? (
         <div className="finance-groups-status-stack">
           {state.error ? <StatusMessage tone="error">{state.error}</StatusMessage> : null}

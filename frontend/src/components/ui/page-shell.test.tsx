@@ -27,6 +27,9 @@ describe("PageShell", () => {
     expect(html).toContain("Nội dung");
     expect(html).toContain("page-shell");
     expect(html).toContain("page-header-actions");
+    expect(html).toContain("page-header-layout");
+    expect(html).toContain("page-header-main");
+    expect(html).toContain("page-header-meta");
   });
 
   it("renders the workspace variant without the old hero-panel class", () => {

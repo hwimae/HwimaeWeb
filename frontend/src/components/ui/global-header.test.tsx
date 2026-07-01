@@ -38,8 +38,11 @@ describe("GlobalHeader", () => {
 
     expect(html).toContain("Hwimae");
     expect(html).toContain("global-header-shell");
+    expect(html).toContain("global-header-topbar");
+    expect(html).toContain("global-header-module-rail");
     expect(html).toContain("global-header-nav-link");
     expect(html).toContain("global-header-auth-button");
+    expect(html).toContain("global-header-auth-actions");
     expect(html).toContain('href="/finance/dashboard"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/login"');
@@ -70,6 +73,7 @@ describe("GlobalHeader", () => {
 
     expect(html).toContain("Đăng xuất");
     expect(html).toContain("User");
+    expect(html).toContain("global-header-account-name");
     expect(html).not.toContain('href="/login"');
     expect(html).not.toContain('href="/register"');
   });

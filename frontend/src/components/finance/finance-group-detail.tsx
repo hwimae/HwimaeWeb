@@ -24,7 +24,7 @@ export function FinanceGroupDetailView({ group, onAddMember, onDeleteMember, onD
   }
 
   return (
-    <section className="workspace-card section-stack finance-group-detail-card" aria-label="Chi tiết nhóm tài chính">
+    <section className="workspace-card section-stack finance-group-detail-card finance-groups-context-stack" aria-label="Chi tiết nhóm tài chính">
       <div className="section-stack">
         <p className="eyebrow">Chi tiết nhóm</p>
         <h2>{group.name}</h2>

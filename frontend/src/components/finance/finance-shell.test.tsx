@@ -33,6 +33,9 @@ describe("FinanceShell", () => {
     expect(html).not.toContain("Khu tài chính");
     expect(html).toContain("Nội dung dashboard");
     expect(html).not.toContain("finance-shell-layout");
+    expect(html).toContain("finance-shell-frame");
+    expect(html).toContain("finance-shell-nav-row");
+    expect(html).toContain("finance-shell-content");
   });
 
   it("renders the groups route with the same horizontal finance nav", async () => {

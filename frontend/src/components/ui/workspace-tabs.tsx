@@ -36,24 +36,31 @@ export function WorkspaceTabs({
       )}
       aria-label={ariaLabel}
     >
-      {items.map((item) => {
-        const isActive = item.match
-          ? item.match(pathname)
-          : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      <div
+        className={clsx(
+          "workspace-tabs-track",
+          orientation === "vertical" ? "workspace-tabs-track-vertical" : "workspace-tabs-track-horizontal",
+        )}
+      >
+        {items.map((item) => {
+          const isActive = item.match
+            ? item.match(pathname)
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-        return (
-          <Button
-            key={item.href}
-            as={Link}
-            href={item.href}
-            variant="light"
-            className={clsx("workspace-nav-link", isActive && "workspace-nav-link-active")}
-            aria-current={isActive ? "page" : undefined}
-          >
-            {item.label}
-          </Button>
-        );
-      })}
+          return (
+            <Button
+              key={item.href}
+              as={Link}
+              href={item.href}
+              variant="light"
+              className={clsx("workspace-nav-link", isActive && "workspace-nav-link-active")}
+              aria-current={isActive ? "page" : undefined}
+            >
+              {item.label}
+            </Button>
+          );
+        })}
+      </div>
     </nav>
   );
 }
